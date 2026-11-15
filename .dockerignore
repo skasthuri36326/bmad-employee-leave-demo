@@ -1,0 +1,10 @@
+**
+!backend/
+!backend/**
+backend/target/
+!_bmad-output/
+!_bmad-output/planning-artifacts/
+!_bmad-output/planning-artifacts/architecture/
+!_bmad-output/planning-artifacts/architecture/architecture-employee-leave-demo-2026-11-13/
+!_bmad-output/planning-artifacts/architecture/architecture-employee-leave-demo-2026-11-13/contracts/
+!_bmad-output/planning-artifacts/architecture/architecture-employee-leave-demo-2026-11-13/contracts/openapi.yaml

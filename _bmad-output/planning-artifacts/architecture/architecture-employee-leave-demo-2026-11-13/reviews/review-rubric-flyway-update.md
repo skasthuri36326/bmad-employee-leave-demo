@@ -1,0 +1,39 @@
+# Architecture Spine Rubric Review — Flyway Update
+
+**Reviewed:** `ARCHITECTURE-SPINE.md` dated 2026-11-14, linked OpenAPI contract, PRD, and UX experience spine.
+
+**Verdict:** The updated spine resolves the earlier response-shape and readiness ambiguities and covers the named first-pass requirements. The Flyway dependency coordinates, default migration path, and startup migration behavior are consistent with current Spring Boot documentation. Two implementation-facing details still need tightening: readiness probe provisioning is asserted without its actuator/configuration contract, and the database/schema rule leaves room for Hibernate or SQL scripts to compete with Flyway.
+
+## Findings
+
+### Medium — Readiness probe is specified without the dependency/configuration that provides it
+
+The deployment envelope requires an “internal readiness probe” and says it reflects the application context, database connection, and completed Flyway migrations. Spring Boot has built-in availability states and documents actuator health/readiness endpoints, but the spine does not name `spring-boot-starter-actuator`, the probe path, whether it is exposed on the application or management port, or how database health joins readiness. A builder could satisfy the prose with a custom probe or a default readiness endpoint that does not check the database, yielding different Compose health behavior.
+
+**Recommendation:** Bind the local health implementation and exact semantics. For example, include/configure Actuator, select a health endpoint/path and port, include database health if “database connection” is a readiness condition, and keep the endpoint internal. Migration failure already prevents a successful Spring Boot startup because Boot invokes `Flyway.migrate()` during startup; readiness can therefore remain false until startup completes. Spring documents availability state endpoints and the startup lifecycle [here](https://docs.spring.io/spring-boot/reference/features/spring-application.html).
+
+### Low — AD-4 does not explicitly prohibit competing schema initializers
+
+AD-4 says Flyway is the migration tool and assigns the migration directory, but it does not say that Flyway is the sole schema-generation mechanism. Hibernate `ddl-auto` or `schema.sql` could therefore be enabled by one implementation and not another, changing schema ownership and startup order. Spring Boot recommends one schema initialization mechanism and says basic `schema.sql`/`data.sql` use alongside Flyway is not recommended [in its database initialization guidance](https://docs.spring.io/spring-boot/how-to/data-initialization.html).
+
+**Recommendation:** State that Flyway alone owns schema changes; configure Hibernate for validation or no DDL generation and do not use `schema.sql`/`data.sql` for schema creation.
+
+## Flyway verification
+
+- **Starter/module:** Correct for Spring Boot 4.1.2. Current Spring Boot docs say to add `spring-boot-starter-flyway`, and PostgreSQL additionally requires `org.flywaydb:flyway-database-postgresql`. The managed dependency coordinates list the starter at version 4.1.2; dependency management is consistent with the spine’s instruction not to specify versions manually. Sources: [Spring Boot database initialization](https://docs.spring.io/spring-boot/how-to/data-initialization.html), [Boot managed coordinates](https://docs.spring.io/spring-boot/appendix/dependency-versions/coordinates.html).
+- **Migration path:** Correct. `backend/src/main/resources/db/migration/` becomes `classpath:db/migration` in the packaged application, which is Spring Boot/Flyway’s documented default location. The versioned SQL migration convention is also consistent with the documented `V<VERSION>__<NAME>.sql` naming. Source: [Spring Boot database initialization](https://docs.spring.io/spring-boot/how-to/data-initialization.html).
+- **Before-readiness behavior:** The core claim is correct with a wording qualification. Spring Boot calls `Flyway.migrate()` during application startup; migration failure prevents the application from completing startup, so it cannot become ready after a failed migration. This does not by itself guarantee that a separate readiness endpoint checks live database connectivity unless configured to include database health. Sources: [Spring Boot database initialization](https://docs.spring.io/spring-boot/how-to/data-initialization.html), [Spring Boot application availability](https://docs.spring.io/spring-boot/reference/features/spring-application.html).
+- **Starter verification:** The specific `spring-boot-starter-flyway` coordinate is present in the official Boot 4.1.2 managed dependency list [here](https://docs.spring.io/spring-boot/appendix/dependency-versions/coordinates.html).
+
+## Checklist assessment
+
+- **Real divergence points:** The spine now fixes the important seams one level below the broad architecture: session authority, browser proxy behavior, CSRF, role/ownership/assignment scope, request payload fields, response role-shapes, validation semantics, atomic decision handling, keyboard feedback, and local service ordering. It closes the issues raised by the earlier rubric and adversarial reviews. The two findings above are narrower implementation ambiguities.
+- **Rule enforceability:** AD-1 through AD-8 are mostly actionable and tie each rule to a specific divergence. AD-4’s exclusivity gap is noted above. AD-2’s phrase “forwards API traffic” can support implementation, though method/path/query/header forwarding should be preserved by implementation review.
+- **Deferred choices:** The listed deferred items do not permit incompatible core architectures. Deferred exact patch versions and image digests are normal implementation pins; pagination and dialog choice do not alter authority or persistence boundaries. The API role-specific response shapes are fixed in OpenAPI.
+- **Named technology currency:** Verified against current official documentation where available. Spring Boot 4.1.2 supports Java 25 (its stated Java range is 17–27) and Maven 3.9.x. The official managed coordinates confirm the Flyway starter. Next.js 16.4.6 is a released version and 16.x is Active LTS; Node.js 26 is listed as Active LTS by the Node release working group. Sources: [Spring Boot system requirements](https://docs.spring.io/spring-boot/system-requirements.html), [Next.js release](https://github.com/vercel/next.js/releases), [Next.js support policy](https://nextjs.org/support-policy), [Node.js release schedule](https://github.com/nodejs/Release). Exact PostgreSQL 18.7 and Compose v2 patch availability are not necessary to accept the architecture structure; the latter is explicitly deferred for pinning. The spine should retain the stated patch-date context when implementation begins.
+- **Linked requirements:** FR-1 through FR-7 and UJ-1/UJ-2 are mapped across capability table and binding tags. The PRD’s security, validation, and accessibility requirements are reflected. OpenAPI has separate Employee/Manager response schemas, including manager employee name, addressing the earlier manager-name ambiguity.
+- **Deployment/operations:** The local-only topology, health dependency ordering, private backend/database ports, persistence volume, and local secret source are decided. Production deployment and service-level targets are explicitly out of scope. Readiness implementation details remain underspecified as described in the finding.
+
+## Conclusion
+
+**Accept with two implementation clarifications recommended.** The Flyway update itself is accurate: the Spring Boot 4 starter plus PostgreSQL Flyway module is right, the resource migration directory matches the default classpath location, and failed startup migrations prevent readiness. Clarify how readiness checks database health and explicitly make Flyway the sole schema-generation mechanism before treating the spine as a fully deterministic build contract.

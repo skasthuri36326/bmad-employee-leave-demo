@@ -1,0 +1,83 @@
+[[entry]]
+id = 1
+type = "story"
+title = "Scaffold the local application stack"
+description = "The versioned Next.js frontend, Spring Boot API, Maven Wrapper, and PostgreSQL start through Compose; the page shows generic dependency readiness while frontend Compose health reports Next.js responsiveness only."
+verify = "Use Docker Compose command-line checks to start services, inspect health and ports, and manually confirm generic ready/unavailable page states during backend/database outages; retain direct-backend and same-origin-proxy anonymous POST 401 security checks. Automated browser and cross-service Playwright coverage belongs to Story 6."
+covers = ["R7", "R6"]
+after = []
+hitl = false
+risk = "high"
+refine = true
+
+[[entry]]
+id = 2
+type = "story"
+title = "Create schema and seed demo accounts"
+description = "Flyway creates the account and assignment schema before backend readiness; after the migration is applied, the developer creates an owner-only external SQL file and explicitly runs the seed service to provision the two demo accounts and their assignment."
+verify = "Build images and run regular docker compose up without a seed file; use Compose and psql to confirm migrations and pgcrypto, then after creating the external SQL file run the opt-in seed and verify exactly one Employee, one Manager, their assignment, BCrypt hashes, safe rerun, and no partial rows on failure."
+covers = ["R7", "R6"]
+after = [1]
+hitl = true
+risk = "high"
+refine = true
+
+[[entry]]
+id = 3
+type = "story"
+title = "Add session authentication and role lookup"
+description = "The developer creates ignored frontend/.env.local values matching the externally seeded Employee and Manager accounts for Playwright. Both accounts can then sign in through one accessible shared form, route to a minimal placeholder page selected by their server-returned role, and sign out using Spring Security sessions and CSRF protection. Dashboard features are delivered by Stories 4 and 5."
+verify = "Write backend JUnit/Mockito, MVC/MockMvc and Spring Security tests plus frontend Jest/React Testing Library acceptance checks before feature implementation; then verify CSRF refresh after login/logout, session rotation, /api/me, logout, accessible form states and role-selected placeholder URLs (/employee and /manager), and one Playwright login/logout check for both seeded roles using explicitly loaded ignored local credentials through the proxy on the locally running Compose stack. Confirm old pre-login and post-logout authenticated cookies both receive 401, logout uses the post-login token, and the next valid login succeeds with the freshly fetched pre-login token."
+covers = ["R1", "R6"]
+after = [2]
+hitl = true
+risk = "high"
+refine = true
+
+[[entry]]
+id = 7
+type = "story"
+title = "Refactor existing project structure"
+description = "Groups the existing Spring Boot and Next.js code and tests into a clear structure without changing behavior or API contracts."
+verify = "Run the existing Maven, Jest, frontend build, and Playwright checks from their new locations; confirm existing test cases and the OpenAPI contract are unchanged."
+covers = []
+after = [3]
+hitl = false
+risk = "low"
+refine = true
+
+[[entry]]
+id = 4
+type = "story"
+title = "Build Employee leave submission and dashboard"
+description = "The signed-in Employee submits a valid leave request and sees only their own requests, reason, dates, and status."
+verify = "Submit valid and invalid requests through the Employee dashboard, then verify backend ownership and field validation with direct API calls."
+covers = ["R2", "R3", "R6"]
+after = [3, 7]
+hitl = false
+risk = "high"
+refine = true
+
+[[entry]]
+id = 5
+type = "story"
+title = "Build Manager review and decisions"
+description = "The signed-in Manager sees requests from assigned Employees and can decide a Pending request once as Approved or Rejected."
+verify = "List, retrieve, approve, reject, and repeat decisions through the Manager surface and direct API calls, including assignment-denial cases."
+covers = ["R4", "R5", "R6"]
+after = [4]
+hitl = false
+risk = "high"
+refine = true
+
+[[entry]]
+id = 6
+type = "story"
+title = "Integrate frontend and backend and verify journeys"
+description = "The shared login, Employee journey, Manager decision, and negative authorization paths work end to end through the same-origin proxy, with cleanup performed inside each owning story."
+verify = "Run an end-to-end walkthrough and direct API authorization checks for anonymous, Employee, Manager, owner, and assignment cases at desktop and phone widths."
+covers = ["R1", "R2", "R3", "R4", "R5", "R6", "R7"]
+after = [5]
+hitl = false
+risk = "high"
+refine = true

@@ -1,0 +1,24 @@
+services:
+  seed:
+    image: postgres:18.7
+    environment:
+      PGHOST: postgres
+      PGDATABASE: ${POSTGRES_DB:?Set POSTGRES_DB in the ignored project-root .env}
+      PGUSER: ${POSTGRES_USER:?Set POSTGRES_USER in the ignored project-root .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the ignored project-root .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - data
+    secrets:
+      - source: demo-seed-sql
+        target: demo-seed.sql
+    entrypoint: ["psql"]
+    command: ["-X", "-q", "-1", "-v", "ON_ERROR_STOP=1", "-f", "/run/secrets/demo-seed.sql"]
+
+secrets:
+  demo-seed-sql:
+    file: ${DEMO_SEED_SQL_FILE:?Set DEMO_SEED_SQL_FILE to the external demo seed SQL file}

@@ -1,0 +1,566 @@
+openapi: 3.1.0
+info:
+  title: Employee Leave Demo API
+  version: 1.0.0
+  description: >-
+    Browser-visible API served at the Next.js origin and transparently proxied to
+    Spring Boot. Spring Boot is authoritative for sessions, identity, role checks,
+    request ownership, assignment checks, validation, and persistence. No operation
+    accepts a browser-selected owner or manager identity.
+servers:
+  - url: /
+    description: Same-origin Next.js application; /api requests proxy to Spring Boot
+tags:
+  - name: Authentication
+  - name: Leave requests
+paths:
+  /api/auth/csrf:
+    get:
+      tags: [Authentication]
+      operationId: getCsrfToken
+      summary: Obtain the CSRF token for session-authenticated mutations
+      description: >-
+        Public bootstrap endpoint. The returned token must be sent in the named
+        header on POST requests. The server may create an unauthenticated session
+        to bind the CSRF token; if it sets a session cookie, the proxy forwards
+        Set-Cookie and the token body. A successful login rotates the session ID.
+      security: []
+      responses:
+        '200':
+          description: CSRF token created or refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsrfToken'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      operationId: login
+      summary: Sign in with a seeded demo account
+      description: >-
+        Accepts Employee or Manager demo credentials. Requires the CSRF header.
+        On success, establishes a server-side session and returns an HttpOnly
+        session cookie. No role selector or public registration exists.
+      security:
+        - csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authenticated; session cookie set
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SessionCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          description: Invalid credentials; response does not reveal which field failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          $ref: '#/components/responses/CsrfRejected'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/auth/logout:
+    post:
+      tags: [Authentication]
+      operationId: logout
+      summary: Invalidate the current session
+      description: >-
+        Requires an authenticated session and a valid CSRF header. Authentication
+        is checked before CSRF: a missing, expired, or invalid session returns
+        401 regardless of whether the CSRF header is missing or invalid. CSRF is
+        checked only after a valid session is confirmed; an authenticated request
+        with a missing or invalid CSRF header returns 403.
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      responses:
+        '204':
+          description: Session invalidated; session cookie cleared
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/ClearedSessionCookie'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/CsrfRejected'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/me:
+    get:
+      tags: [Authentication]
+      operationId: getCurrentUser
+      summary: Get the signed-in user's identity and role
+      description: >-
+        Called by Next.js to select the appropriate dashboard. The returned role
+        is display context only; backend authorization is checked independently
+        on every protected operation.
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Current authenticated account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/leave-requests:
+    post:
+      tags: [Leave requests]
+      operationId: createLeaveRequest
+      summary: Submit a leave request (Employee only)
+      description: >-
+        Owner and initial status are derived by the backend. Dates are inclusive
+        calendar dates; start must be today or later and end must be on or after
+        start. Same-day leave is allowed. No weekend or holiday rules apply.
+        Reason is trimmed before validating its 1–500 character length.
+        Authentication is checked before CSRF: a missing, expired, or invalid
+        session returns 401 regardless of whether the CSRF header is missing or
+        invalid. CSRF is checked only after a valid session is confirmed; an
+        authenticated request with a missing or invalid CSRF header returns 403.
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLeaveRequest'
+      responses:
+        '201':
+          description: Request created with Pending status
+          headers:
+            Location:
+              description: Relative URL of the created leave request
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeLeaveRequest'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Authenticated caller is not an Employee, or the authenticated request has a missing or invalid CSRF header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    get:
+      tags: [Leave requests]
+      operationId: listLeaveRequests
+      summary: List requests visible to the current account
+      description: >-
+        Employee receives only their own requests. Manager receives requests
+        only for employees assigned to them. Any other role is forbidden.
+        Results are newest first. No employeeId or managerId filter is accepted;
+        the backend derives scope from the authenticated account and assignments.
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Authorized request list (possibly empty)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveRequestList'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Authenticated role cannot use this operation.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/leave-requests/{requestId}:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    get:
+      tags: [Leave requests]
+      operationId: getLeaveRequest
+      summary: Read one request within the caller's authorization scope
+      description: >-
+        Employee may read only their own request. Manager may read only a request
+        for an employee assigned to them. Missing and out-of-scope IDs both return
+        404 without protected request data.
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Authorized leave request
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/EmployeeLeaveRequest'
+                  - $ref: '#/components/schemas/ManagerLeaveRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Authenticated role cannot use this operation. A Manager's out-of-assignment request is reported as 404.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Missing or outside the caller's ownership/assignment scope; response does not reveal which case applies.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/leave-requests/{requestId}/decision:
+    parameters:
+      - $ref: '#/components/parameters/RequestId'
+    post:
+      tags: [Leave requests]
+      operationId: decideLeaveRequest
+      summary: Approve or reject a Pending request (assigned Manager only)
+      description: >-
+        Only an authenticated Manager assigned to the request's Employee may
+        decide it. A decision is allowed once and only while Pending. The body
+        contains exactly one decision enum and has no rejection-reason field.
+        The backend verifies role, assignment, and current state atomically.
+        Authentication is checked before CSRF: a missing, expired, or invalid
+        session returns 401 regardless of whether the CSRF header is missing or
+        invalid. CSRF is checked only after a valid session is confirmed; an
+        authenticated request with a missing or invalid CSRF header returns 403.
+      security:
+        - sessionCookie: []
+          csrfHeader: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionRequest'
+      responses:
+        '200':
+          description: Decision saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagerLeaveRequest'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Authenticated caller is not a Manager or the authenticated request has a missing or invalid CSRF header; response contains no protected request details.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Request is missing or outside Manager's assignment scope; response does not reveal which case applies.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Request is no longer Pending; stored decision is unchanged
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: LEAVESESSION
+      description: HttpOnly Spring Security session cookie; never read by JavaScript.
+    csrfHeader:
+      type: apiKey
+      in: header
+      name: X-CSRF-TOKEN
+      description: Token returned by GET /api/auth/csrf; required for every POST.
+  headers:
+    SessionCookie:
+      description: >-
+        HttpOnly session cookie. SameSite=Lax. Set Secure when served over HTTPS;
+        Secure may be omitted for local HTTP demo use.
+      schema:
+        type: string
+        example: LEAVESESSION=opaque-session-id; Path=/; HttpOnly; SameSite=Lax
+    ClearedSessionCookie:
+      description: Expired session cookie after logout.
+      schema:
+        type: string
+        example: LEAVESESSION=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax
+  parameters:
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      description: Opaque identifier; possession does not grant access.
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    Role:
+      type: string
+      enum: [EMPLOYEE, MANAGER]
+    LeaveStatus:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED]
+    Decision:
+      type: string
+      enum: [APPROVED, REJECTED]
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          format: password
+          writeOnly: true
+          minLength: 1
+          maxLength: 256
+    CurrentUser:
+      type: object
+      additionalProperties: false
+      required: [id, email, displayName, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        displayName:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+            - $ref: '#/components/schemas/Role'
+          readOnly: true
+    CsrfToken:
+      type: object
+      additionalProperties: false
+      required: [headerName, token]
+      properties:
+        headerName:
+          type: string
+          const: X-CSRF-TOKEN
+        token:
+          type: string
+          minLength: 1
+    CreateLeaveRequest:
+      type: object
+      additionalProperties: false
+      required: [startDate, endDate, reason]
+      properties:
+        startDate:
+          type: string
+          format: date
+          description: Inclusive calendar date; today or later in Europe/London for the local demo.
+        endDate:
+          type: string
+          format: date
+          description: Inclusive calendar date; same day or later than startDate. No weekend or public-holiday rules apply.
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Trimmed before validation and storage; whitespace-only values are invalid.
+    DecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [decision]
+      properties:
+        decision:
+          $ref: '#/components/schemas/Decision'
+    EmployeeLeaveRequest:
+      type: object
+      additionalProperties: false
+      required: [id, startDate, endDate, reason, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/LeaveStatus'
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        decidedAt:
+          type: [string, 'null']
+          format: date-time
+          readOnly: true
+    ManagerLeaveRequest:
+      type: object
+      additionalProperties: false
+      required: [id, employeeId, employeeName, startDate, endDate, reason, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        employeeId:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Server-derived owner. It is never accepted from a create or decision request.
+        employeeName:
+          type: string
+          readOnly: true
+          description: Display name of the owning Employee for Manager review.
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/LeaveStatus'
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        decidedAt:
+          type: [string, 'null']
+          format: date-time
+          readOnly: true
+    LeaveRequestList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/EmployeeLeaveRequest'
+              - $ref: '#/components/schemas/ManagerLeaveRequest'
+          description: Newest first; scope is derived from authenticated role and server-side relationships.
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+    Problem:
+      type: object
+      description: RFC 9457 problem details with optional field-level validation errors.
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+          description: >-
+            For 404 request lookups, use the same generic detail for missing and
+            out-of-scope IDs; never reveal protected data or whether the ID exists.
+        instance:
+          type: string
+          format: uri-reference
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+  responses:
+    ValidationError:
+      description: Invalid JSON or validation failure; includes field errors when applicable.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthenticated:
+      description: Missing, expired, or invalid session.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Authenticated role is not permitted for this operation.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Request does not exist or is outside the caller's assignment/ownership scope.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    CsrfRejected:
+      description: Missing or invalid CSRF token.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ServerError:
+      description: Unexpected server failure without internal details.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

@@ -1,0 +1,194 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PRD Validation: Simple Employee Leave Application</title><style>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --border: #e7e5e4;
+    --text: #1c1917;
+    --muted: #78716c;
+
+    --verdict-strong: #16a34a;
+    --verdict-adequate: #65a30d;
+    --verdict-thin: #d97706;
+    --verdict-broken: #dc2626;
+
+    --sev-low: #64748b;
+    --sev-medium: #ca8a04;
+    --sev-high: #ea580c;
+    --sev-critical: #dc2626;
+
+    --grade-exc: #16a34a;
+    --grade-good: #65a30d;
+    --grade-fair: #d97706;
+    --grade-poor: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header.report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .title h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .title .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .grade {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    color: white;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .grade-excellent { background: var(--grade-exc); }
+  .grade-good { background: var(--grade-good); }
+  .grade-fair { background: var(--grade-fair); }
+  .grade-poor { background: var(--grade-poor); }
+
+  .synthesis {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--muted);
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+    font-size: 15.5px;
+  }
+  .synthesis p { margin: 0 0 10px; }
+  .synthesis p:last-child { margin-bottom: 0; }
+
+  .dimension-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .dim-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .dim-card .dim-name { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .dim-card .dim-verdict { font-size: 14px; font-weight: 600; }
+
+  section.dimension, section.reviewer-section { margin-bottom: 14px; }
+  section.dimension details, section.reviewer-section details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  section summary {
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  section summary::-webkit-details-marker { display: none; }
+  section summary::before {
+    content: "▸";
+    display: inline-block;
+    color: var(--muted);
+    transition: transform 0.15s ease;
+  }
+  section details[open] summary::before { transform: rotate(90deg); }
+  section summary h2 {
+    display: inline;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    flex: 1;
+  }
+  .verdict-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: white;
+  }
+  .verdict-strong { background: var(--verdict-strong); }
+  .verdict-adequate { background: var(--verdict-adequate); }
+  .verdict-thin { background: var(--verdict-thin); }
+  .verdict-broken { background: var(--verdict-broken); }
+
+  .dim-body { padding: 4px 20px 18px; }
+  .dim-judgment { color: var(--text); font-size: 14.5px; }
+  .dim-judgment p { margin: 0 0 10px; }
+
+  .findings-list { padding: 0 20px 4px; }
+  article.finding {
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  article.finding:first-child { border-top: none; }
+  article.finding header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+  }
+  .badge-sev-low { background: rgba(100, 116, 139, 0.12); color: var(--sev-low); }
+  .badge-sev-medium { background: rgba(202, 138, 4, 0.14); color: var(--sev-medium); }
+  .badge-sev-high { background: rgba(234, 88, 12, 0.14); color: var(--sev-high); }
+  .badge-sev-critical { background: rgba(220, 38, 38, 0.14); color: var(--sev-critical); }
+  .finding-title { margin: 0; font-size: 15px; font-weight: 500; flex: 1; min-width: 200px; }
+  .finding-location { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; color: var(--muted); }
+  .finding-note, .finding-fix { margin-top: 6px; font-size: 14px; }
+  .finding-fix strong { color: var(--muted); font-weight: 500; }
+
+  .reviewer-source {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  .mechanical {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 24px;
+    font-size: 14px;
+  }
+  .mechanical h3 { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .mechanical ul { margin: 0; padding-left: 20px; }
+  .mechanical li { margin-bottom: 4px; color: var(--text); }
+
+  footer.report-footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  footer .meta { display: flex; gap: 24px; flex-wrap: wrap; }
+</style></head><body><div class="container"><header class="report-header"><div class="title"><h1>Simple Employee Leave Application — Validation Report</h1><div class="subtitle">_bmad-output/planning-artifacts/prds/prd-employee-leave-demo-2026-11-13/prd.md</div></div><div class="grade grade-excellent">Excellent</div></header><div class="synthesis"><p>This is a strong, usable first-pass PRD for a deliberately small internal demo: the workflow, role boundaries, and backend authorization promise are consistent and stated in verifiable terms. It is ready to guide initial story creation, with a few material details still open around date semantics, reason limits, credential handling, and operational expectations; those should be resolved or explicitly deferred before implementation commitments depend on them.</p><p>The source reconciliation found no missing original requirements. One internal date-rule contradiction needs resolution; the remaining findings are open validation and accessibility details rather than scope conflicts.</p></div><div class="dimension-summary"><div class="dim-card"><div class="dim-name">Decision-readiness</div><div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div></div><div class="dim-card"><div class="dim-name">Substance over theater</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div><div class="dim-card"><div class="dim-name">Strategic coherence</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div><div class="dim-card"><div class="dim-name">Done-ness clarity</div><div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div></div><div class="dim-card"><div class="dim-name">Scope honesty</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div><div class="dim-card"><div class="dim-name">Downstream usability</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div><div class="dim-card"><div class="dim-name">Shape fit</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div></div><section class="dimension"><details><summary><h2>Decision-readiness</h2><span class="verdict-pill verdict-adequate">adequate</span></summary><div class="dim-body"><div class="dim-judgment"><p>The central product and authorization decisions are clear, and the open questions identify real decisions. The date rules are internally inconsistent: §10 assumes inclusive same-day ranges, while §9 asks whether dates are inclusive. Credential delivery and input policy also remain open.</p></div></div><div class="findings-list"><article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">Date rules conflict with the Assumptions Index</h3><span class="finding-location">§4.2 FR-4; §9 question 1; §10</span></header><div class="finding-note">The Assumptions Index says same-day requests are valid and ranges are inclusive, but §9 asks whether dates are inclusive and says only that the end date must not precede the start date. Past dates and weekend/holiday treatment are also undecided.</div><div class="finding-fix"><strong>Fix:</strong> Choose the MVP date rule, then move it to a confirmed requirement or keep it as an assumption and remove the contradictory open question. State whether past dates and weekends/holidays are allowed.</div></article><article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">Demo credential handoff is unresolved</h3><span class="finding-location">§5.1; §9 question 3</span></header><div class="finding-note">The PRD says seeded credentials are not public but does not specify how evaluators receive them or how secrets are configured.</div><div class="finding-fix"><strong>Fix:</strong> Choose the delivery/configuration approach or assign it as a pre-demo operational task with an owner.</div></article></div></details></section><section class="dimension"><details><summary><h2>Substance over theater</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><div class="dim-judgment"><p>The two journeys map directly to the seeded Employee and Manager roles. Security requirements name ownership and assignment boundaries and require backend enforcement; no decorative sections were identified.</p></div></div><div class="findings-list"></div></details></section><section class="dimension"><details><summary><h2>Strategic coherence</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><div class="dim-judgment"><p>The product thesis is consistent: each role sees and acts only on requests authorized for that role. Scope and success measures support the submission, decision, and authorization flows.</p></div></div><div class="findings-list"></div></details></section><section class="dimension"><details><summary><h2>Done-ness clarity</h2><span class="verdict-pill verdict-adequate">adequate</span></summary><div class="dim-body"><div class="dim-judgment"><p>FR-1–FR-7 have observable acceptance criteria. Keyboard access and reason validation remain less testable than the core request and authorization behavior.</p></div></div><div class="findings-list"><article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">Keyboard accessibility lacks a completion condition</h3><span class="finding-location">§5.2 Usability and Accessibility</span></header><div class="finding-note">“The core login, submission, review, and decision flows are usable with keyboard input” does not specify the required keyboard operations or a verifiable completion condition.</div><div class="finding-fix"><strong>Fix:</strong> Require completing each named flow without a pointer, with all controls reachable, operable, and visibly focused.</div></article><article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">Reason whitespace and length handling are undefined</h3><span class="finding-location">§4.2 FR-4; §9 question 2</span></header><div class="finding-note">A reason is required, but the PRD does not say whether whitespace-only input is empty or what length is accepted.</div><div class="finding-fix"><strong>Fix:</strong> Specify minimum and maximum lengths and whitespace handling, or explicitly defer length validation while rejecting whitespace-only input.</div></article></div></details></section><section class="dimension"><details><summary><h2>Scope honesty</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><div class="dim-judgment"><p>The non-goals and MVP exclusions make major omissions explicit. The assumptions index and open questions distinguish inferred demo details from unresolved policy decisions.</p></div></div><div class="findings-list"></div></details></section><section class="dimension"><details><summary><h2>Downstream usability</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><div class="dim-judgment"><p>The glossary, globally numbered FRs, journey IDs, success measures, and cross-references are consistent. The source reconciliation found no original first-pass requirement missing.</p></div></div><div class="findings-list"></div></details></section><section class="dimension"><details><summary><h2>Shape fit</h2><span class="verdict-pill verdict-strong">strong</span></summary><div class="dim-body"><div class="dim-judgment"><p>The PRD is appropriately scoped for an internal two-role workflow. Named journeys and detailed access boundaries support the meaningful UX and security risks in this demo.</p></div></div><div class="findings-list"></div></details></section><div class="mechanical"><h3>Mechanical notes</h3><ul><li>No material glossary drift; terminology remains stable.</li><li>FR-1–FR-7, UJ-1–UJ-2, and SM-1–SM-3 are unique, contiguous, and cross-references resolve.</li><li>The Assumptions Index covers the explicit assumptions; the seeded manager relationship and date behavior are identified.</li><li>Both named journeys include Alex and Morgan with context.</li><li>Required PRD sections are present and appropriate for the demo.</li></ul></div><footer class="report-footer"><div class="meta"><span>Rubric: .agents/skills/bmad-prd/assets/prd-validation-checklist.md</span><span>Generated: 2026-11-13T19:15:19Z</span></div></footer></div></body></html>

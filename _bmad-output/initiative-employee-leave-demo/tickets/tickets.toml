@@ -1,0 +1,6 @@
+[[epic]]
+id = 1
+slug = "epic-employee-leave-first-build"
+title = "Employee leave request and approval workflow"
+description = "The seeded Employee submits and tracks leave and the assigned Manager reviews and decides it in a runnable local Compose application, with authorization enforced by Spring Boot."
+covers = ["R1", "R2", "R3", "R4", "R5", "R6", "R7"]
