@@ -13,7 +13,7 @@ INSERT INTO app_user (display_name, email, password_hash, role)
 VALUES
   ('Demo Employee', 'employee@test.com',
    crypt('password123', gen_salt('bf', 10)), 'EMPLOYEE'),
-  ('Demo Manager', 'manger@test.com',
+  ('Demo Manager', 'manager@test.com',
    crypt('password123', gen_salt('bf', 10)), 'MANAGER')
 ON CONFLICT (email) DO NOTHING;
 
@@ -29,7 +29,7 @@ BEGIN
 
   SELECT id INTO manager_uuid
   FROM app_user
-  WHERE email = 'manger@test.com' AND role = 'MANAGER';
+  WHERE email = 'manager@test.com' AND role = 'MANAGER';
 
   IF employee_uuid IS NULL OR manager_uuid IS NULL THEN
     RAISE EXCEPTION 'Expected demo accounts are missing or have incorrect roles';
