@@ -1,0 +1,7 @@
+FROM mcr.microsoft.com/playwright:v1.65.1-noble
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+ENV PLAYWRIGHT_BASE_URL=http://frontend:3000
+CMD ["npm", "run", "test:e2e"]

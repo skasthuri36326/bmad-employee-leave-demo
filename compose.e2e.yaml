@@ -1,0 +1,23 @@
+services:
+  e2e:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.e2e
+    environment:
+      PLAYWRIGHT_BASE_URL: http://frontend:3000
+      DEMO_CREDENTIALS_FILE: /run/secrets/e2e-credentials.env
+      E2E_MANIFEST_FILE: /run/e2e/manifest.json
+      API_BASE_URL: http://backend:8080
+    volumes:
+      - ${E2E_RUNTIME_DIR:?Set E2E_RUNTIME_DIR}:/run/e2e:ro
+      - ${E2E_CREDENTIALS_FILE:?Set E2E_CREDENTIALS_FILE}:/run/secrets/e2e-credentials.env:ro
+    networks:
+      - app
+    depends_on:
+      frontend:
+        condition: service_healthy
+
+networks:
+  app:
+    external: true
+    name: ${COMPOSE_PROJECT_NAME:-employee-leave-demo}_app

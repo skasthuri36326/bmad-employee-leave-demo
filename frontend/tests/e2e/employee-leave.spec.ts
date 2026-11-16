@@ -3,7 +3,8 @@ import { expect, test } from "@playwright/test";
 test("Employee sees field validation and a saved leave request", async ({ page }) => {
   const email = process.env.DEMO_EMPLOYEE_EMAIL;
   const password = process.env.DEMO_EMPLOYEE_PASSWORD;
-  if (!email || !password) throw new Error("Set the seeded Employee credentials before running Playwright.");
+  const manifest = JSON.parse(process.env.E2E_MANIFEST ?? "{}") as { marker?: string };
+  if (!email || !password || !manifest.marker) throw new Error("Runtime Employee credentials and the E2E manifest are required.");
   await page.goto("/");
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/password/i).fill(password);
@@ -20,7 +21,7 @@ test("Employee sees field validation and a saved leave request", async ({ page }
 
   const start = new Date(); start.setUTCDate(start.getUTCDate() + 20);
   const date = start.toISOString().slice(0, 10);
-  const marker = `Playwright leave ${Date.now()}`;
+  const marker = `E2E employee ${manifest.marker}`;
   await page.getByLabel(/start date/i).fill(date);
   await page.getByLabel(/end date/i).fill(date);
   await page.getByLabel(/reason for requesting leave/i).fill(marker);
