@@ -30,7 +30,11 @@ async function signInByKeyboard(page: Page, email: string, password: string, rou
 
 async function tabTo(page: Page, target: Locator) {
   for (let index = 0; index < 40; index += 1) {
-    if (await target.evaluate(element => element === document.activeElement)) return;
+    if (await target.evaluate(element => element === document.activeElement)) {
+      await expect(target).toHaveCSS("outline-style", "solid");
+      await expect(target).toHaveCSS("outline-width", "3px");
+      return;
+    }
     await page.keyboard.press("Tab");
   }
   throw new Error("Keyboard navigation did not reach the expected control.");
@@ -68,13 +72,18 @@ test("Employee and Manager keyboard journeys persist separate decisions at deskt
     await page.keyboard.press("Enter");
     await expect(page.getByText(/Start date must be today or later/i)).toBeVisible();
     await expect(startDate).toBeFocused();
+    const describedBy = await startDate.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    await expect(page.locator(`#${describedBy}`)).toContainText(/Start date must be today or later/i);
 
     const date = new Date();
     date.setUTCDate(date.getUTCDate() + 25);
     const day = date.toISOString().slice(0, 10);
     for (const suffix of ["approve", "reject"]) {
       await tabTo(page, startDate);
-      const requestReason = `${runMarker} ${suffix}`;
+      const requestPrefix = `${runMarker} ${suffix}`;
+      const longPhoneReason = viewport.width === 390 && suffix === "reject" ? ` ${"x".repeat(490 - requestPrefix.length - 1)}` : "";
+      const requestReason = `${requestPrefix}${longPhoneReason}`;
       await startDate.fill(day);
       await tabTo(page, endDate);
       await endDate.fill(day);
@@ -102,6 +111,7 @@ test("Employee and Manager keyboard journeys persist separate decisions at deskt
       await expect(item).toHaveCount(1);
       await expect(item).toBeVisible();
       const action = item.getByRole("button", { name: decision === "approve" ? "Approve" : "Reject" });
+      await expect(action).toBeVisible();
       await tabTo(page, action);
       await page.keyboard.press("Enter");
       await expect(page.getByRole("dialog")).toContainText(decision === "approve" ? "Approve" : "Reject");
@@ -128,7 +138,7 @@ test("Employee and Manager keyboard journeys persist separate decisions at deskt
     const csrf = (await csrfResponse.json() as { token: string }).token;
     for (const [suffix, decision] of [["approve", "REJECTED"], ["reject", "APPROVED"]] as const) {
       const item = requestItem(page, `${runMarker} ${suffix}`, viewport.width);
-      const id = managerList.items.find(request => request.reason === `${runMarker} ${suffix}`)?.id;
+      const id = managerList.items.find(request => request.reason.startsWith(`${runMarker} ${suffix}`))?.id;
       expect(id).toBeTruthy();
       const repeat = await page.request.post(`/api/leave-requests/${id}/decision`, {
         headers: { "X-CSRF-TOKEN": csrf },
@@ -142,12 +152,35 @@ test("Employee and Manager keyboard journeys persist separate decisions at deskt
     await tabTo(page, managerSignOut);
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL("/");
-    await signInByKeyboard(page, credentials.employeeEmail, credentials.employeePassword, /\/employee$/);
+    const listPath = "**/api/leave-requests";
+    let releaseList: (() => void) | undefined;
+    let notifyListRequested: (() => void) | undefined;
+    let notifyListContinued: (() => void) | undefined;
+    const listRequested = new Promise<void>(resolve => { notifyListRequested = resolve; });
+    const listContinued = new Promise<void>(resolve => { notifyListContinued = resolve; });
+    await page.route(listPath, async route => {
+      notifyListRequested?.();
+      await new Promise<void>(resolve => { releaseList = resolve; });
+      try { await route.continue(); }
+      finally { notifyListContinued?.(); }
+    });
+    try {
+      await signInByKeyboard(page, credentials.employeeEmail, credentials.employeePassword, /\/employee$/);
+      await listRequested;
+      await expect(page.getByText(`${runMarker} approve`, { exact: true })).toHaveCount(0);
+      await expect(page.getByText(`${runMarker} reject`, { exact: true })).toHaveCount(0);
+    } finally {
+      releaseList?.();
+      if (releaseList) await listContinued;
+      await page.unroute(listPath);
+    }
     for (const [suffix, status] of [["approve", "Approved"], ["reject", "Rejected"]] as const) {
       const item = requestItem(page, `${runMarker} ${suffix}`, viewport.width);
       await expect(item).toHaveCount(1);
       await expect(item.locator(".status-badge")).toHaveText(status);
+      await expect(item).toContainText(day);
       await expect(item).toBeVisible();
+      if (suffix === "reject") await expect(item.getByText(/rejection reason/i)).toHaveCount(0);
     }
     if (viewport.width === 390) {
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);

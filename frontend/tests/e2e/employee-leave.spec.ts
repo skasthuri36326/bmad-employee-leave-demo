@@ -19,6 +19,15 @@ test("Employee sees field validation and a saved leave request", async ({ page }
   await expect(page.getByText(/Start date must be today or later/i)).toBeVisible();
   expect(await list.innerText()).toBe(before);
 
+  const validStart = new Date(); validStart.setUTCDate(validStart.getUTCDate() + 10);
+  const validDate = validStart.toISOString().slice(0, 10);
+  await page.getByLabel(/start date/i).fill(validDate);
+  await page.getByLabel(/end date/i).fill(validDate);
+  await page.getByLabel(/reason for requesting leave/i).fill("");
+  await page.getByRole("button", { name: "Submit request" }).click();
+  await expect(page.getByText("Enter a reason for requesting leave.")).toBeVisible();
+  expect(await list.innerText()).toBe(before);
+
   const start = new Date(); start.setUTCDate(start.getUTCDate() + 20);
   const date = start.toISOString().slice(0, 10);
   const marker = `E2E employee ${manifest.marker}`;

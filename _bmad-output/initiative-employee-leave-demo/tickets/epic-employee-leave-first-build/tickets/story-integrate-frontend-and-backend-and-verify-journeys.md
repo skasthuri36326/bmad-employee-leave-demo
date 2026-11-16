@@ -35,7 +35,8 @@ Verify the Employee and Manager journeys across the locally running Compose stac
    **And** the helper creates a unique run marker and marker file before setup, uses the marker in fixture account emails and test request reasons, commits the fixture transaction, then captures generated fixture IDs in a per-run `manifest.json`
    **And** the helper mounts that manifest read-only into the Playwright container at `/run/e2e/manifest.json`, and Playwright uses those IDs to select the fixture Employee, Manager, and request
    **And** fixture inserts run in one transaction, so failed setup leaves no partial fixture rows
-   **And** the helper registers its shell `EXIT` trap before setup; cleanup then runs after success or failure, finds requests and accounts by the run marker if ID capture failed, and otherwise uses the manifest IDs, deleting only that run's requests, assignments, and accounts
+   **And** the helper registers its shell `EXIT` trap before setup; cleanup runs after success or failure and removes requests whose reasons contain the run marker, requests owned by marker-scoped fixture accounts, their assignments, and only those fixture accounts
+   **And** cleanup uses the unique run marker and marker-scoped fixture account emails to select rows; it never uses manifest IDs as delete selectors
    **And** cleanup does not truncate tables, delete demo seed accounts or their assignment, drop the database, or remove the persistent volume
 
 3. **Verify the Employee journey through the browser** (R1, R2, R3)
@@ -78,7 +79,7 @@ Verify the Employee and Manager journeys across the locally running Compose stac
    **When** the developer runs `./scripts/run-local-e2e.sh`, which creates the run marker and manifest directory, registers cleanup, inserts fixtures after backend health, and runs `docker compose -f compose.yaml -f compose.e2e.yaml run --rm --no-deps` with the manifest and ignored credential file mounted into the `e2e` service before `npm run test:e2e`
    **Then** `--no-deps` prevents the E2E command from starting application services; the helper starts and removes only the one-shot E2E runner and does not start or stop the application stack
    **And** the E2E runner joins the same Compose network as the frontend and backend, so it can reach both by service name while the backend port remains unpublished
-   **And** the seeded Employee and Manager credentials are read from the developer's ignored local file at `~/.config/employee-leave-demo/e2e-credentials.env`, mounted read-only at `/run/secrets/e2e-credentials.env`; the file is not copied into the image or printed in logs
+   **And** the seeded Employee and Manager credentials are read from an ignored local file whose default path is `~/.config/employee-leave-demo/e2e-credentials.env` and whose path can be overridden with `E2E_CREDENTIALS_FILE`; the selected file is mounted read-only at `/run/secrets/e2e-credentials.env` and is not copied into the image or printed in logs
    **And** the runner reads the per-run manifest, and fixture cleanup runs whether fixture setup, API checks, or Playwright pass or fail
    **And** each exercised API operation's request, response shape, and expected status matches `contracts/openapi.yaml`, including 409 for a decision on a no-longer-Pending request
    **And** end-to-end checks verify cross-service behavior, persistence, role journeys, proxy forwarding, direct backend authorization, and responsive keyboard interaction without repeating the unit and feature cases covered by Stories 3–5

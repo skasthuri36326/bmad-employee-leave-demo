@@ -3,7 +3,7 @@ title: '1.6 Integrate frontend and backend and verify journeys'
 type: feature
 ticket: '6'
 created: '2026-11-16'
-status: built
+status: done
 baseline_revision: 'badb736db4f182d9e6e87f4c7d6fc320142d9a50'
 route: full
 route_source: auto
@@ -92,9 +92,81 @@ Use the same Compose project and the existing `app` network so the one-shot runn
 
 **Commands:**
 - `E2E_CREDENTIALS_FILE="$PWD/frontend/.env.local" ./scripts/run-local-e2e.sh` after separately running `docker compose up -d --wait --wait-timeout 180` -- passed: SQL setup completed after backend health, all four Playwright tests passed, and fixture cleanup committed.
+- After the review fixes, `E2E_CREDENTIALS_FILE="$PWD/frontend/.env.local" ./scripts/run-local-e2e.sh` passed: all four Playwright tests passed and cleanup committed six requests, one assignment, and two fixture accounts.
+- `E2E_CREDENTIALS_FILE="$PWD/frontend/.env.local" ./scripts/e2e/verify-cleanup-on-failure.sh` -- passed: injected marker-generation, transactional fixture-setup, runner, post-commit manifest, and invalid-manifest failures removed temporary/run-scoped data; seeded accounts and their assignment remained.
 - `git diff --check` -- expected: no whitespace errors.
 
 **Manual checks:**
 - Confirmed only frontend is published, E2E joins the application network, credential/manifest mounts are read-only, and helper contains no application `up`, `stop`, or `down` operation.
-- Confirmed cleanup selectors use only run marker/manifest IDs and preserve all demo seed rows and the named volume.
+- Confirmed cleanup selectors use literal run-marker matching wherever the marker occurs in a request reason and marker-scoped fixture account emails; they do not trust manifest IDs to target arbitrary rows. Demo seed rows and the named volume remain intact.
 - Confirmed the OpenAPI contract and Stories 3–5 tests remain unchanged; repeat-decision 409 agrees with the contract.
+
+## Code Review
+
+### 2026-11-16
+
+**Code review complete.** 0 `decision-needed`, 5 `patch` (fixed), 0 `defer`, 7 rejected. The Edge Case Hunter returned an empty result and was treated as a failed lens; the other three lenses completed.
+
+- [x] [Review][Patch] Verify saved date values after the Employee returns from the Manager journey [frontend/tests/e2e/manager-decisions.spec.ts:170]
+- [x] [Review][Patch] Assert the invalid field describes its validation error [frontend/tests/e2e/manager-decisions.spec.ts:71]
+- [x] [Review][Patch] Assert no Manager request appears while the Employee request list is loading [frontend/tests/e2e/manager-decisions.spec.ts:164]
+- [x] [Review][Patch] Validate OpenAPI Problem Details shape and recursively reject protected fields [frontend/tests/e2e/authorization.spec.ts:19]
+- [x] [Review][Patch] Exercise cleanup after runner and manifest failures and verify seed preservation [scripts/e2e/verify-cleanup-on-failure.sh:1]
+
+Rejected:
+- `low` — The `tabTo` helper sends real Tab key presses in the intended field and action sequence; no concrete user-visible misordering was demonstrated, and asserting every browser-native date-input stop would add brittle test complexity.
+- `false` — `role="status"` has implicit polite live semantics, and the test verifies that this region receives the final message.
+- `false` — The fixture Manager is checked by `managerId`, the request owner by `employeeId`, and the request by `requestId`; fixture Employee authentication is not required.
+- `false` — The generated UUID marker is private to the run directory and unknown to existing rows; marker matching is the specified fallback.
+- `false` — The seeded Employee session reads the run-scoped request owned by the fixture Employee, so this is a cross-owner GET.
+- `false` — The browser decision requests and the authorization fixture serve distinct explicit requirements; the plan does not require the same records for both.
+- `false` — The Manager journey test also signs in the Employee, creates requests, and verifies persisted results at both viewport sizes using keyboard interaction.
+
+### 2026-11-16 — Edge Case Hunter follow-up
+
+**Follow-up review complete.** 0 `decision-needed`, 1 `patch` (fixed), 0 `defer`, 0 rejected. The Edge Case Hunter completed on follow-up and identified that a temporary run directory could remain if marker creation failed before the normal cleanup trap was installed. The Verification Gap Reviewer found no gaps. The Intent Alignment Auditor confirmed alignment. The Blind Hunter timed out and remains a failed lens.
+
+- [x] [Review][Patch] Install an immediate EXIT cleanup trap after creating the temporary run directory, and verify marker-generation failure cleanup [scripts/run-local-e2e.sh:21].
+- Confirmed the five prior review fixes remain present: saved request dates after returning as Employee, validation error association for the invalid date field, no Manager request content while the Employee list is blocked, exact Problem Details/authorization assertions, and cleanup coverage that preserves seed rows.
+- The focused cleanup check passed for marker-generation, runner, and post-commit manifest failures. The previously passing four-test Playwright E2E run remains the verification for the journey fixes; it was not rerun because this follow-up changed only the pre-fixture temporary-directory cleanup path.
+
+### 2026-11-16 — E2E SQL cleanup correction
+
+Tightened cleanup after tracing the reported root cause: SQL no longer treats manifest IDs as standalone delete authority or uses wildcard substring matching. It deletes only requests explicitly marked with this run's literal marker and rows owned by the marker-scoped fixture accounts. If the manifest is malformed, the helper skips ID extraction and still cleans by marker. The full four-test E2E run and failure-injection cleanup checks passed after this change; seeded accounts and assignment remained intact.
+
+### 2026-11-16 — Full code review follow-up
+
+**Code review complete.** 0 `decision-needed`, 10 `patch` (fixed), 0 `defer`, 0 rejected. The Edge Case Hunter completed and found that browser-created request reasons place the run marker after a prefix, so prefix-only cleanup left requests behind. The Blind Hunter completed with nine improvement findings. The Verification Gap Reviewer found no gaps; the Intent Alignment Auditor confirmed the harness-focused reading of Story 6.
+
+- [x] [Review][Patch] Match the run marker anywhere in request reasons; verify marked requests are removed [scripts/e2e/cleanup.sql:5].
+- [x] [Review][Patch] Assert the seeded Manager's list omits the unassigned fixture request [frontend/tests/e2e/authorization.spec.ts:87].
+- [x] [Review][Patch] Verify `/api/me` reports the expected role before authorization assertions [frontend/tests/e2e/authorization.spec.ts:7].
+- [x] [Review][Patch] Replace Bash 4-only `mapfile` in the local cleanup verifier [scripts/e2e/verify-cleanup-on-failure.sh:100].
+- [x] [Review][Patch] Verify blank-reason feedback and that it creates no request [frontend/tests/e2e/employee-leave.spec.ts:22].
+- [x] [Review][Patch] Assert visible focus outlines as keyboard navigation reaches controls [frontend/tests/e2e/manager-decisions.spec.ts:31].
+- [x] [Review][Patch] Verify the fixture Employee can read their own request [frontend/tests/e2e/authorization.spec.ts:93].
+- [x] [Review][Patch] Assert Manager decision controls are visible at phone width [frontend/tests/e2e/manager-decisions.spec.ts:111].
+- [x] [Review][Patch] Align Story 6 cleanup wording with marker-only cleanup [Story 6 ticket, Requirements 2].
+- [x] [Review][Patch] Document the `E2E_CREDENTIALS_FILE` override [Story 6 ticket, Requirements 7].
+- Confirmed the five previously recorded fixes remain present: saved dates after the Employee returns, validation error association, no Manager content during Employee list loading, Problem Details shape/protected-field checks, and failure cleanup preserving seed data.
+- A read-only query found five leftover requests from an earlier run under one E2E marker. The corrected cleanup SQL removed those five; the follow-up check returned `0|0|0|2|1` (no marked requests/accounts/assignments; two seeded accounts and their assignment remain).
+- A final read-only database check found zero remaining E2E-marked requests.
+
+Rejected: none.
+
+### 2026-11-16 — Review after Story 6 wording update
+
+**Code review complete.** 0 `decision-needed`, 4 `patch` (fixed), 0 `defer`, 6 rejected. The Blind Hunter completed with nine findings. The Verification Gap Reviewer found no gaps, and the Intent Alignment Auditor found the updated ticket wording aligned with the cleanup and credential handling. A structured Edge Case Hunter recheck completed and returned one candidate finding, which was verified as false. The earlier empty lens result is superseded. This was not an E2E test failure; the latest Playwright run passed all four tests.
+
+- [x] [Review][Patch] Inject a mid-transaction fixture setup error and verify rollback plus marker cleanup [scripts/e2e/verify-cleanup-on-failure.sh:49].
+- [x] [Review][Patch] Assert the Employee sees no rejection-reason content [frontend/tests/e2e/manager-decisions.spec.ts:183].
+- [x] [Review][Patch] Exercise a near-limit request reason at phone width while checking visibility and overflow [frontend/tests/e2e/manager-decisions.spec.ts:84].
+- [x] [Review][Patch] Include employee email in the denied-response protected-field checks [frontend/tests/e2e/authorization.spec.ts:27].
+
+Rejected (not pending test failures):
+- `low` — Cleanup-failure itself is a rare recovery path; the helper reports and preserves the marker/manifest for manual recovery, while simulating a database cleanup failure would add substantial test-harness complexity.
+- `false` — The invalid field receives focus and its `aria-describedby` points to the visible validation error.
+- `false` — After each decision, the test asserts focus on the updated Status and its visible outline.
+- `false` — The authentication journey reuses the saved authenticated cookie after logout and asserts `/api/me` returns 401.
+- `false` — The alternate Employee fixture is used for API ownership authorization; the ticket's browser journey is for the seeded Employee, and the fixture owner detail GET succeeds through both API paths.
+- `false` — UUID generation failure exits before the SQL cleanup trap is registered; only the early temporary-directory trap runs. The marker-failure injection confirms that no database cleanup receives an empty marker.

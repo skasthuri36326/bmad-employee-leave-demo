@@ -18,6 +18,7 @@ for service in postgres backend frontend; do
 done
 
 runtime="$(mktemp -d "${TMPDIR:-/tmp}/employee-leave-e2e.XXXXXX")"
+trap 'rm -rf "$runtime"' EXIT
 chmod 700 "$runtime"
 marker="e2e-$(node -e 'process.stdout.write(require("node:crypto").randomUUID())')"
 printf '%s\n' "$marker" > "$runtime/run-marker"
@@ -41,9 +42,14 @@ psql_manifest() {
 }
 cleanup() {
   local result=$?
+  local manifest_ids=""
   trap - EXIT INT TERM
   if [[ -r "$runtime/manifest.json" ]]; then
-    IFS=$'\t' read -r employee_id manager_id request_id <<< "$(node -e 'const m=require(process.argv[1]);process.stdout.write([m.employeeId,m.managerId,m.requestId].join("\t"))' "$runtime/manifest.json")"
+    if manifest_ids="$(node -e 'const m=require(process.argv[1]);process.stdout.write([m.employeeId,m.managerId,m.requestId].join("\t"))' "$runtime/manifest.json" 2>/dev/null)"; then
+      IFS=$'\t' read -r employee_id manager_id request_id <<< "$manifest_ids"
+    else
+      echo "Fixture manifest is unreadable; cleanup will use the run marker." >&2
+    fi
   fi
   if ! psql_file "$ROOT/scripts/e2e/cleanup.sql"; then
     echo "Fixture cleanup failed; the run marker and manifest remain in $runtime." >&2
