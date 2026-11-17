@@ -3,6 +3,8 @@ package demo.leave.request.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
 
 import demo.leave.auth.security.AppUserPrincipal;
 import demo.leave.generated.model.CreateLeaveRequest;
@@ -63,5 +65,70 @@ class LeaveRequestControllerTest {
         EmployeeLeaveRequest mapped = (EmployeeLeaveRequest) response.getBody();
         assertEquals(ZoneOffset.UTC, mapped.getCreatedAt().getOffset());
         assertEquals(ZoneOffset.UTC, mapped.getDecidedAt().getOffset());
+    }
+
+    @Test void requiresEmployeeAuthenticationForCreateAndRejectsOtherRoles() {
+        SecurityContextHolder.clearContext();
+        assertThrows(LeaveApiException.class, () -> controller.createLeaveRequest(new CreateLeaveRequest()));
+
+        var manager = new AppUserPrincipal(new AppUser(UUID.randomUUID(), "manager@example.test", "Manager", "unused", "MANAGER"));
+        SecurityContextHolder.getContext().setAuthentication(
+            UsernamePasswordAuthenticationToken.authenticated(manager, null, manager.getAuthorities()));
+        assertThrows(LeaveApiException.class, () -> controller.createLeaveRequest(new CreateLeaveRequest()));
+        verify(service, never()).create(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test void listsEmployeeAndManagerViewsAndRejectsUnknownRoles() {
+        var employee = new AppUserPrincipal(new AppUser(UUID.randomUUID(), "employee@example.test", "Employee", "unused", "EMPLOYEE"));
+        SecurityContextHolder.getContext().setAuthentication(
+            UsernamePasswordAuthenticationToken.authenticated(employee, null, employee.getAuthorities()));
+        when(service.listEmployee(employee.getId())).thenReturn(java.util.List.of());
+        assertEquals(HttpStatus.OK, controller.listLeaveRequests().getStatusCode());
+        verify(service).listEmployee(employee.getId());
+
+        var manager = new AppUserPrincipal(new AppUser(UUID.randomUUID(), "manager@example.test", "Manager", "unused", "MANAGER"));
+        SecurityContextHolder.getContext().setAuthentication(
+            UsernamePasswordAuthenticationToken.authenticated(manager, null, manager.getAuthorities()));
+        when(service.listManager(manager.getId())).thenReturn(java.util.List.of());
+        assertEquals(HttpStatus.OK, controller.listLeaveRequests().getStatusCode());
+        verify(service).listManager(manager.getId());
+
+        var unknown = new AppUserPrincipal(new AppUser(UUID.randomUUID(), "unknown@example.test", "Unknown", "unused", "AUDITOR"));
+        SecurityContextHolder.getContext().setAuthentication(
+            UsernamePasswordAuthenticationToken.authenticated(unknown, null, unknown.getAuthorities()));
+        assertThrows(LeaveApiException.class, controller::listLeaveRequests);
+    }
+
+    @Test void getAndDecisionGuardAuthenticationAndRoleBeforeCallingService() {
+        UUID requestId = UUID.randomUUID();
+        SecurityContextHolder.clearContext();
+        assertThrows(LeaveApiException.class, () -> controller.getLeaveRequest(requestId));
+        assertThrows(LeaveApiException.class, () -> controller.decideLeaveRequest(requestId, null));
+
+        var employee = new AppUserPrincipal(new AppUser(UUID.randomUUID(), "employee@example.test", "Employee", "unused", "EMPLOYEE"));
+        SecurityContextHolder.getContext().setAuthentication(
+            UsernamePasswordAuthenticationToken.authenticated(employee, null, employee.getAuthorities()));
+        assertThrows(LeaveApiException.class, () -> controller.getLeaveRequest(requestId));
+        assertThrows(LeaveApiException.class, () -> controller.decideLeaveRequest(requestId, null));
+        verify(service, never()).decide(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test void managerDecisionRequiresAValueAndMapsTheManagerResponse() {
+        UUID managerId = UUID.randomUUID();
+        UUID requestId = UUID.randomUUID();
+        var manager = new AppUserPrincipal(new AppUser(managerId, "manager@example.test", "Manager", "unused", "MANAGER"));
+        SecurityContextHolder.getContext().setAuthentication(
+            UsernamePasswordAuthenticationToken.authenticated(manager, null, manager.getAuthorities()));
+        assertThrows(LeaveApiException.class, () -> controller.decideLeaveRequest(requestId, null));
+        assertThrows(LeaveApiException.class, () -> controller.decideLeaveRequest(requestId, new demo.leave.generated.model.DecisionRequest()));
+
+        LocalDate date = LocalDate.of(2026, 11, 20);
+        LeaveRequest saved = new LeaveRequest(requestId, UUID.randomUUID(), date, date, "Annual leave", "APPROVED",
+            OffsetDateTime.parse("2026-11-15T10:00:00+05:00"), OffsetDateTime.parse("2026-11-16T11:00:00+05:00"), "Employee");
+        when(service.decide(requestId, managerId, "APPROVED")).thenReturn(saved);
+        var response = controller.decideLeaveRequest(requestId, new demo.leave.generated.model.DecisionRequest(demo.leave.generated.model.Decision.APPROVED));
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(ZoneOffset.UTC, response.getBody().getCreatedAt().getOffset());
+        assertEquals(ZoneOffset.UTC, response.getBody().getDecidedAt().getOffset());
     }
 }

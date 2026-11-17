@@ -53,6 +53,38 @@ class LeaveRequestServiceTest {
         verifyNoInteractions(repository);
     }
 
+    @Test void rejectsMissingDatesAndNullReasonAndAcceptsMaximumReasonLength() {
+        LocalDate today = LocalDate.of(2026, 11, 15);
+        assertEquals("startDate", assertThrows(LeaveRequestService.LeaveValidationException.class,
+            () -> service.create(owner, null, today, "x")).field());
+        assertEquals("endDate", assertThrows(LeaveRequestService.LeaveValidationException.class,
+            () -> service.create(owner, today, null, "x")).field());
+        assertEquals("reason", assertThrows(LeaveRequestService.LeaveValidationException.class,
+            () -> service.create(owner, today, today, null)).field());
+
+        String reason = "x".repeat(500);
+        var saved = new LeaveRequest(UUID.randomUUID(), owner, today, today, reason, "PENDING",
+            java.time.OffsetDateTime.now(), null, null);
+        when(repository.create(owner, today, today, reason)).thenReturn(saved);
+        assertEquals(saved, service.create(owner, today, today, reason));
+        verify(repository).create(owner, today, today, reason);
+    }
+
+    @Test void rejectsUnsupportedDecisionBeforeWriting() {
+        assertEquals("decision", assertThrows(LeaveRequestService.LeaveValidationException.class,
+            () -> service.decide(UUID.randomUUID(), UUID.randomUUID(), "PENDING")).field());
+        assertEquals("decision", assertThrows(LeaveRequestService.LeaveValidationException.class,
+            () -> service.decide(UUID.randomUUID(), UUID.randomUUID(), null)).field());
+        verifyNoInteractions(repository);
+    }
+
+    @Test void reportsConflictIfConditionalWriteSucceedsButRequestCannotBeReloaded() {
+        UUID manager = UUID.randomUUID(), requestId = UUID.randomUUID();
+        when(repository.decide(eq(requestId), eq(manager), eq("REJECTED"), any())).thenReturn(true);
+        when(repository.findManager(requestId, manager)).thenReturn(java.util.Optional.empty());
+        assertThrows(java.util.NoSuchElementException.class, () -> service.decide(requestId, manager, "REJECTED"));
+    }
+
     @Test void decisionUsesClockInUtcAndReturnsManagerScopedRequest() {
         UUID manager = UUID.randomUUID(), requestId = UUID.randomUUID();
         LocalDate date = LocalDate.of(2026, 11, 20);

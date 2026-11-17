@@ -38,8 +38,19 @@ export default function SignInForm() {
   }, []);
 
   useEffect(() => {
-    void refreshCsrf().catch(() => setError("Sign-in is temporarily unavailable. Please try again."));
-  }, [refreshCsrf]);
+    let active = true;
+    void fetchCsrf().then((next) => {
+      if (!active) return;
+      setCsrf(next);
+      setCsrfUnavailable(false);
+    }).catch(() => {
+      if (!active) return;
+      setCsrf(null);
+      setCsrfUnavailable(true);
+      setError("Sign-in is temporarily unavailable. Please try again.");
+    });
+    return () => { active = false; };
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

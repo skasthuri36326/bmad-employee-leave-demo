@@ -71,7 +71,7 @@ describe("ManagerDashboard decisions", () => {
   it("prevents a second submission while the confirmed decision is pending", async () => {
     let finishDecision!: (result: Response) => void;
     const decisionResponse = new Promise<Response>(resolve => { finishDecision = resolve; });
-    (global.fetch as jest.Mock).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+    (global.fetch as jest.Mock).mockImplementation(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url === "/api/me") return response({ role: "MANAGER" });
       if (url === "/api/auth/csrf") return response({ headerName: "X-CSRF-TOKEN", token: "csrf" });
@@ -106,7 +106,7 @@ describe("ManagerDashboard decisions", () => {
 
   it("reports a stale decision without presenting it as saved", async () => {
     let lists = 0;
-    (global.fetch as jest.Mock).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+    (global.fetch as jest.Mock).mockImplementation(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url === "/api/me") return response({ role: "MANAGER" });
       if (url === "/api/auth/csrf") return response({ headerName: "X-CSRF-TOKEN", token: "csrf" });
@@ -170,5 +170,68 @@ describe("ManagerDashboard decisions", () => {
     });
     render(<ManagerDashboard />);
     expect(await screen.findByRole("alert")).toHaveTextContent("Leave requests could not be loaded.");
+  });
+
+  it("renders the empty state when the assigned request list has no items", async () => {
+    (global.fetch as jest.Mock).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/me") return response({ role: "MANAGER" });
+      if (url === "/api/auth/csrf") return response({ headerName: "X-CSRF-TOKEN", token: "csrf" });
+      return response({ items: [] });
+    });
+
+    render(<ManagerDashboard />);
+
+    expect(await screen.findByText("There are no leave requests to review.")).toBeVisible();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("removes a request when the server reports that it is outside the Manager assignment", async () => {
+    (global.fetch as jest.Mock).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/me") return response({ role: "MANAGER" });
+      if (url === "/api/auth/csrf") return response({ headerName: "X-CSRF-TOKEN", token: "csrf" });
+      if (url.endsWith("/decision")) return response({ detail: "Not found" }, 404);
+      return response({ items: [pending] });
+    });
+    render(<ManagerDashboard />);
+    await screen.findAllByText("Family event");
+    fireEvent.click(within(screen.getByRole("table")).getByRole("button", { name: "Reject" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm reject" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("You can’t access this leave request.");
+    expect(screen.queryByText("Family event")).not.toBeInTheDocument();
+    expect(screen.queryByText(/was rejected/i)).not.toBeInTheDocument();
+  });
+
+  it("redirects to sign-in when the session expires during logout", async () => {
+    (global.fetch as jest.Mock).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/me") return response({ role: "MANAGER" });
+      if (url === "/api/auth/csrf") return response({ headerName: "X-CSRF-TOKEN", token: "csrf" });
+      if (url === "/api/auth/logout") return response({}, 401);
+      return response({ items: [] });
+    });
+    render(<ManagerDashboard />);
+    fireEvent.click(await screen.findByRole("button", { name: "Sign out" }));
+
+    await waitFor(() => expect(mockRouter.replace).toHaveBeenCalledWith("/"));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("reports a failed logout without redirecting", async () => {
+    (global.fetch as jest.Mock).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/me") return response({ role: "MANAGER" });
+      if (url === "/api/auth/csrf") return response({ headerName: "X-CSRF-TOKEN", token: "csrf" });
+      if (url === "/api/auth/logout") return response({}, 503);
+      return response({ items: [] });
+    });
+    render(<ManagerDashboard />);
+    fireEvent.click(await screen.findByRole("button", { name: "Sign out" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Sign-out did not complete.");
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeEnabled();
   });
 });

@@ -7,6 +7,7 @@ frontend/node_modules/
 frontend/.next/
 frontend/test-results/
 frontend/playwright-report/
+frontend/coverage/
 backend/target/
 
 # Operating system metadata

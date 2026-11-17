@@ -79,4 +79,49 @@ describe("SignInForm", () => {
     await user.click(screen.getByRole("button", { name: /retry secure sign-in/i }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled());
   });
+
+  it("keeps secure sign-in disabled when the CSRF response is invalid, then accepts a valid retry", async () => {
+    const user = userEvent.setup();
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(jsonResponse({ headerName: "wrong-header", token: "stale-token" }))
+      .mockResolvedValueOnce(jsonResponse({ headerName: "X-CSRF-TOKEN", token: "fresh-token" }));
+
+    render(<SignInForm />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/temporarily unavailable/i);
+    expect(screen.getByRole("button", { name: "Sign in" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Retry secure sign-in" }));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled());
+    expect(global.fetch).toHaveBeenNthCalledWith(2, "/api/auth/csrf", expect.objectContaining({ cache: "no-store" }));
+  });
+
+  it("shows a generic recovery message when the login service is unavailable", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(jsonResponse({ headerName: "X-CSRF-TOKEN", token: "pre-login-token" }))
+      .mockResolvedValueOnce(jsonResponse({ detail: "Service unavailable" }, false, 503));
+    const user = userEvent.setup();
+    render(<SignInForm />);
+    await user.type(await screen.findByRole("textbox", { name: /email/i }), "employee@example.test");
+    await user.type(screen.getByLabelText(/password/i), "secret");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Sign-in is temporarily unavailable. Please try again.");
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("does not route or expose account details for an unsupported login role", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(jsonResponse({ headerName: "X-CSRF-TOKEN", token: "pre-login-token" }))
+      .mockResolvedValueOnce(jsonResponse({ role: "AUDITOR", email: "private@example.test" }));
+    const user = userEvent.setup();
+    render(<SignInForm />);
+    await user.type(await screen.findByRole("textbox", { name: /email/i }), "auditor@example.test");
+    await user.type(screen.getByLabelText(/password/i), "secret");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Sign-in is temporarily unavailable.");
+    expect(screen.queryByText(/private@example\.test/i)).not.toBeInTheDocument();
+    expect(replace).not.toHaveBeenCalled();
+  });
 });
