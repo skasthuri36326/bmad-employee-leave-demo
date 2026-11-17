@@ -93,6 +93,33 @@ Typical workflow:
 7. Review the implementation against the refined story and plan. If the review does not pass, keep the story in review and address the findings.
 8. After all stories are complete, run the epic retrospective. The retrospective records lessons and an acceptance verdict; it does not replace ticket status updates.
 
+### PRD prompt used
+
+<details>
+<summary>Show the original PRD prompt</summary>
+
+```text
+Create a PRD for a simple employee leave application.
+
+First-pass requirements:
+- No public registration.
+- Provide a login screen for two seeded demo users: one Employee and one Manager.
+- After login, show the dashboard appropriate to the user's role.
+- An Employee can submit leave dates and a reason for requesting leave.
+- An Employee can see their own requests and whether each is Pending, Approved, or Rejected.
+- A Manager can see leave requests from employees assigned to them and approve or reject them.
+- A Manager can only see and decide requests from employees assigned to them.
+- A Manager does not enter a rejection reason in this first pass.
+- The Employee can see Approved or Rejected status, but not a rejection reason.
+- The backend must enforce access rules; hiding controls in the frontend is not sufficient.
+- Exclude registration, an Admin role, Keycloak, notifications, and production deployment.
+
+Include user journeys, permissions, acceptance criteria, and out-of-scope items.
+```
+
+
+</details>
+
 ### Project artifacts
 
 | Path | Purpose |
