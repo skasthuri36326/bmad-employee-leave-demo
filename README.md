@@ -14,11 +14,11 @@ The focus is helping readers learn the BMad Method and specification-driven deve
 
 - Docker with the Compose v2 plugin
 - Bash, to run `seed.sh`
-- Node.js, to run the local end-to-end helper
+- Node.js and npm, to run frontend checks and the local end-to-end helper
 - `uv`, to run the BMad ticket-tree commands
 - A Codex environment with this repository's project skills, to run BMad workflows
 
-Host Java, Maven, and npm are not needed to build and start the application with Docker Compose. The [Architecture Spine](_bmad-output/planning-artifacts/architecture/architecture-employee-leave-demo-2026-11-13/ARCHITECTURE-SPINE.md) is the source of truth for application and toolchain versions; refer to it rather than maintaining a second version list here.
+Host Java and Maven are not needed to build and start the application with Docker Compose. They are needed to run the backend Maven tests and coverage report. The [Architecture Spine](_bmad-output/planning-artifacts/architecture/architecture-employee-leave-demo-2026-11-13/ARCHITECTURE-SPINE.md) is the source of truth for application and toolchain versions; refer to it rather than maintaining a second version list here.
 
 ### Configure PostgreSQL
 
@@ -172,24 +172,32 @@ uv run _bmad/method/scripts/tickets.py --project-root . find _bmad-output/initia
 
 The first command lists the initiative's epics and stories with dependency and status information. The second resolves story reference `1.6` to its story, plan, and current ticket state.
 
-## Run unit and backend integration tests
+## Run tests, coverage, and lint
 
-Run the backend test suite from the `backend` directory. The Maven `verify` lifecycle runs the backend tests, including PostgreSQL integration tests that use Testcontainers; Docker must be running.
+### Backend tests and coverage
+
+Run the backend test suite from the `backend` directory. The Maven `verify` lifecycle runs unit tests and PostgreSQL integration tests using Testcontainers; Docker must be running. It also generates a JaCoCo coverage report for maintained backend code, excluding generated OpenAPI models.
 
 ```sh
 cd backend
 ./mvnw verify
 ```
 
-Run the frontend unit tests from the `frontend` directory:
+Open the report at `backend/target/site/jacoco/index.html` after the command succeeds.
+
+### Frontend tests, coverage, and lint
+
+Install frontend dependencies once, then run unit tests with or without coverage from the `frontend` directory:
 
 ```sh
 cd frontend
 npm ci
 npm run test:unit
+npm run test:coverage
+npm run lint
 ```
 
-The repository has automated backend, frontend unit, and Playwright end-to-end tests. It does not currently generate a JaCoCo or Jest coverage report, so no line or branch coverage percentage is claimed. Story 1 readiness/outage checks and Story 2 schema/seed checks also include documented manual Compose and `psql` verification.
+The frontend coverage command writes an HTML report to `frontend/coverage/lcov-report/index.html`. Lint uses the Next.js and TypeScript ESLint rules. Story 1 readiness/outage checks and Story 2 schema/seed checks also include documented manual Compose and `psql` verification.
 
 ## Run local end-to-end checks
 
