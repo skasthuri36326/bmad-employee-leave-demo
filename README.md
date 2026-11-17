@@ -6,7 +6,7 @@ This repository is a learning demo of a greenfield build using the BMad Method a
 
 The demo is an Employee leave-request workflow. An Employee can submit and track a request; an assigned Manager can review and approve or reject it. The browser talks to Next.js, which proxies API requests to Spring Boot. Spring Boot owns authentication, authorization, validation, and persistence in PostgreSQL.
 
-The focus is demonstrating the development process and its artifacts, not providing a production-ready service.
+The focus is helping readers learn the BMad Method and specification-driven development, then apply them hands-on by completing the optional brownfield exercise below. This is a learning demo, not a production-ready service.
 
 ## Run the application locally
 
@@ -71,6 +71,12 @@ The database uses a named volume and retains its data across ordinary stops and 
 
 This repository uses BMad workflows to turn requirements and contracts into dependency-ordered stories, then implement and review those stories. Invoke the workflows in Codex and provide the project context and task. They are not shell commands.
 
+This table describes the greenfield workflow used for this demo, not every BMad workflow or command. BMad also supports work in existing codebases (brownfield) and optional modules such as Test Architect for test strategy and automation. Available workflows and command names depend on the installed BMad version and modules; consult the official documentation for current options:
+
+- [How BMad works](https://docs.bmad-method.org/start/how-bmad-works/)
+- [Start in an existing codebase](https://docs.bmad-method.org/existing-codebases/start-in-an-existing-codebase/)
+- [Add modules, including Test Architect](https://docs.bmad-method.org/customize/add-modules/)
+
 | Order | Work | Workflow to invoke | Main artifacts and checkpoint |
 |---:|---|---|---|
 | 1 | Define product scope | `bmad-prd` | PRD and validation record; review and agree on scope |
@@ -117,6 +123,31 @@ First-pass requirements:
 Include user journeys, permissions, acceptance criteria, and out-of-scope items.
 ```
 
+
+</details>
+
+### Brownfield exercise: add rejection reasons
+
+<details>
+<summary>Open the exercise</summary>
+
+The first-pass scope deliberately excludes rejection reasons. Use this as an optional brownfield exercise: let a Manager enter a rejection reason and show the saved reason to the owning Employee.
+
+Use the [BMad guide for an existing codebase](https://docs.bmad-method.org/existing-codebases/start-in-an-existing-codebase/) for guidance. Treat the current code, tickets, API contract, migrations, and tests as the baseline. Create a new change; do not rewrite the original first-pass scope.
+
+ATDD does not require Test Architect (TEA). If TEA is installed, its Automate workflow in red mode can scaffold acceptance tests before implementation. In current Codex installations, the command is `$bmad-tea-automate`; check the [TEA command reference](https://github.com/bmad-code-org/bmad-method-test-architecture-enterprise/blob/main/docs/reference/commands.md) for your installed version. Test Design is optional for this focused change.
+
+Exercise steps:
+
+1. **Refine one vertical story** with `bmad-agent-po`: define the Manager input, validation, persistence, Employee visibility, and access restrictions.
+2. **Update the API contract** with `bmad-architecture`: specify the decision request and Employee response before implementation.
+3. **Write tests first** from the acceptance criteria and OpenAPI contract: API-level tests, focused UI tests, and Playwright E2E tests. Cover a Manager rejecting with a reason and the owning Employee seeing it after signing in again; also verify an unrelated Employee cannot see that reason. Run the tests and confirm the expected failures.
+4. **Build the same story in two tasks:** implement the migration and backend API first; then connect the Manager and Employee UI. Run the tests until they pass.
+5. **Review** with `bmad-code-review`; address findings and record verification in the story plan.
+
+Keep this as one story because the outcome is one end-to-end behavior. Split backend and frontend into dependent stories only if they need to be delivered or worked on independently.
+
+The exercise is complete when the rejection reason persists, the owning Employee can see it after signing in, other users cannot see it, and existing journeys still work.
 
 </details>
 
