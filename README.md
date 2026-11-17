@@ -102,7 +102,7 @@ Typical workflow:
 ### PRD prompt used
 
 <details>
-<summary>Show the original PRD prompt</summary>
+<summary>Click to view the original PRD prompt</summary>
 
 ```text
 Create a PRD for a simple employee leave application.
@@ -129,7 +129,7 @@ Include user journeys, permissions, acceptance criteria, and out-of-scope items.
 ### Brownfield exercise: add rejection reasons
 
 <details>
-<summary>Open the exercise</summary>
+<summary>Click to open the brownfield exercise</summary>
 
 The first-pass scope deliberately excludes rejection reasons. Use this as an optional brownfield exercise: let a Manager enter a rejection reason and show the saved reason to the owning Employee.
 
