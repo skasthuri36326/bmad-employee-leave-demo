@@ -2,7 +2,7 @@
 
 ## About this project
 
-This repository is a learning demo of a greenfield build using the BMad Method (Breakthrough Method for Agile AI-Driven Development) and specification-driven development. It follows the work from product requirements and UX through architecture, API contracts, story planning, implementation, review, and local end-to-end verification.
+This repository is a learning demo of a greenfield build using the BMad Method (Breakthrough Method for Agile AI-Driven Development) and specification-driven development. It follows the work from product requirements and UX through architecture, API contracts, story planning, implementation, review, local end-to-end verification, and a team retrospective.
 
 The demo is an Employee leave-request workflow. An Employee can submit and track a request; an assigned Manager can review and approve or reject it. The browser talks to Next.js, which proxies API requests to Spring Boot. Spring Boot owns authentication, authorization, validation, and persistence in PostgreSQL.
 
@@ -12,7 +12,7 @@ To use BMad with this project, install the BMad core and method skills in your c
 
 ## What different readers can take away
 
-This demo shows how BMad can help people with different responsibilities contribute to one shared product outcome. The artifacts give each role a way to make decisions visible to the next person.
+BMad skills guide the AI through focused workflows using the project’s context to produce shared artifacts for the team to review and refine. These artifacts make decisions visible across product, UX, architecture, and development.
 
 | If your perspective is… | Look at… | Take away |
 |---|---|---|
@@ -69,10 +69,33 @@ Story 6 provides a complementary verification example. Refinement turned “inte
 
 BMad also supports work in existing codebases (brownfield) and optional modules such as Test Architect. Those were not required for the original greenfield workflow; the optional exercise below shows one way to apply the artifacts to a follow-on change. See [Start in an existing codebase](https://docs.bmad-method.org/existing-codebases/start-in-an-existing-codebase/) and [Add modules, including Test Architect](https://docs.bmad-method.org/customize/add-modules/).
 
-### PRD prompt used
+### Project artifacts
+
+| Path | Purpose |
+|---|---|
+| `_bmad-output/planning-artifacts/prds/` | Product requirements and validation records |
+| `_bmad-output/planning-artifacts/ux-designs/` | UX journeys, accessibility behaviour, visual design, and mockups |
+| `_bmad-output/planning-artifacts/architecture/` | Architecture decisions, service boundaries, and API contracts |
+| `_bmad-output/initiative-employee-leave-demo/` | Initiative requirements and ticket tree |
+| `_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/` | Epic definition, `tickets.toml`, story files, plans, and retrospective |
+| `_bmad/` | BMad configuration, ticket-tree scripts, and module metadata |
+| `.agents/skills/` | Project-installed BMad workflows and their instructions |
+
+Inspect the ticket tree from a terminal:
+
+```sh
+uv run _bmad/method/scripts/tickets.py --project-root . status _bmad-output/initiative-employee-leave-demo
+uv run _bmad/method/scripts/tickets.py --project-root . find _bmad-output/initiative-employee-leave-demo 1.6
+```
+
+The first command lists the initiative's epics and stories with dependency and status information. The second resolves story reference `1.6` to its story, plan, and current ticket state.
+
+### Original prompt for the initial MVP PRD
+
+This is the prompt used to define the first-pass MVP scope for the PRD.
 
 <details>
-<summary>Click to view the original PRD prompt</summary>
+<summary>View the initial MVP PRD prompt</summary>
 
 ```text
 Create a PRD for a simple employee leave application.
@@ -120,27 +143,6 @@ Keep this as one story because the outcome is one end-to-end behaviour. Split ba
 The exercise is complete when the rejection reason persists, the owning Employee can see it after signing in, other users cannot see it, and existing journeys still work.
 
 </details>
-
-### Project artifacts
-
-| Path | Purpose |
-|---|---|
-| `_bmad-output/planning-artifacts/prds/` | Product requirements and validation records |
-| `_bmad-output/planning-artifacts/ux-designs/` | UX journeys, accessibility behaviour, visual design, and mockups |
-| `_bmad-output/planning-artifacts/architecture/` | Architecture decisions, service boundaries, and API contracts |
-| `_bmad-output/initiative-employee-leave-demo/` | Initiative requirements and ticket tree |
-| `_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/` | Epic definition, `tickets.toml`, story files, plans, and retrospective |
-| `_bmad/` | BMad configuration, ticket-tree scripts, and module metadata |
-| `.agents/skills/` | Project-installed BMad workflows and their instructions |
-
-Inspect the ticket tree from a terminal:
-
-```sh
-uv run _bmad/method/scripts/tickets.py --project-root . status _bmad-output/initiative-employee-leave-demo
-uv run _bmad/method/scripts/tickets.py --project-root . find _bmad-output/initiative-employee-leave-demo 1.6
-```
-
-The first command lists the initiative's epics and stories with dependency and status information. The second resolves story reference `1.6` to its story, plan, and current ticket state.
 
 ## Run the application locally
 
