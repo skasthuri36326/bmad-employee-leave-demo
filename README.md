@@ -8,6 +8,8 @@ The demo is an Employee leave-request workflow. An Employee can submit and track
 
 The focus is helping readers learn the BMad Method and specification-driven development, then apply them hands-on by completing the optional brownfield exercise below. This is a learning demo, not a production-ready service.
 
+To use BMad with this project, install the BMad core and method skills in your coding tool by following the official [BMad installation guide](https://docs.bmad-method.org/start/install-bmad/). The project skills are under `.agents/skills/`, and shared BMad configuration and scripts are under `_bmad/`.
+
 ## Run the application locally
 
 ### Requirements
