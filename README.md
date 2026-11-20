@@ -2,7 +2,7 @@
 
 ## About this project
 
-This repository is a learning demo of a greenfield build using the BMad Method and specification-driven development. It follows the work from product requirements and UX through architecture, API contracts, story planning, implementation, review, and local end-to-end verification.
+This repository is a learning demo of a greenfield build using the BMad Method (Breakthrough Method for Agile AI-Driven Development) and specification-driven development. It follows the work from product requirements and UX through architecture, API contracts, story planning, implementation, review, and local end-to-end verification.
 
 The demo is an Employee leave-request workflow. An Employee can submit and track a request; an assigned Manager can review and approve or reject it. The browser talks to Next.js, which proxies API requests to Spring Boot. Spring Boot owns authentication, authorization, validation, and persistence in PostgreSQL.
 
@@ -16,7 +16,7 @@ This demo shows how BMad can help people with different responsibilities contrib
 
 | If your perspective is… | Look at… | Take away |
 |---|---|---|
-| Product or business | [PRD](_bmad-output/planning-artifacts/prds/prd-employee-leave-demo-2026-11-13/prd.md) · [initiative](_bmad-output/initiative-employee-leave-demo/initiative-employee-leave-demo.md) | Turn a problem into agreed user outcomes, boundaries, and success conditions before implementation begins. |
+| Product, business, or Business Analyst (BA) | [PRD](_bmad-output/planning-artifacts/prds/prd-employee-leave-demo-2026-11-13/prd.md) · [initiative](_bmad-output/initiative-employee-leave-demo/initiative-employee-leave-demo.md) | Turn a problem into agreed user outcomes, boundaries, and success conditions before implementation begins. |
 | UI/UX | [Experience](_bmad-output/planning-artifacts/ux-designs/ux-employee-leave-demo-2026-11-13/EXPERIENCE.md) · [Design](_bmad-output/planning-artifacts/ux-designs/ux-employee-leave-demo-2026-11-13/DESIGN.md) | Make user flows, accessibility expectations, and interface behaviour part of the build input. |
 | Architecture | [Architecture spine](_bmad-output/planning-artifacts/architecture/architecture-employee-leave-demo-2026-11-13/ARCHITECTURE-SPINE.md) · [OpenAPI contract](_bmad-output/planning-artifacts/architecture/architecture-employee-leave-demo-2026-11-13/contracts/openapi.yaml) | Agree on service boundaries and API behaviour before implementation. |
 | Product ownership | [Epic](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/epic-employee-leave-first-build.md) · [ticket tree](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/tickets/tickets.toml) · [story tickets](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/tickets/) | Break scope into dependency-ordered stories and refine acceptance criteria so the team knows what to build and how to judge completion. |
