@@ -10,108 +10,62 @@ The focus is helping readers learn the BMad Method and specification-driven deve
 
 To use BMad with this project, install the BMad core and method skills in your coding tool by following the official [BMad installation guide](https://docs.bmad-method.org/start/install-bmad/). The project skills are under `.agents/skills/`, and shared BMad configuration and scripts are under `_bmad/`.
 
-## Run the application locally
-
-### Requirements
-
-- Docker with the Compose v2 plugin
-- Bash, to run `seed.sh`
-- Node.js and npm, to run frontend checks and the local end-to-end helper
-- `uv`, to run the BMad ticket-tree commands
-- A Codex environment with this repository's project skills, to run BMad workflows
-
-Host Java and Maven are not needed to build and start the application with Docker Compose. They are needed to run the backend Maven tests and coverage report. The [Architecture Spine](_bmad-output/planning-artifacts/architecture/architecture-employee-leave-demo-2026-11-13/ARCHITECTURE-SPINE.md) is the source of truth for application and toolchain versions; refer to it rather than maintaining a second version list here.
-
-### Configure PostgreSQL
-
-Copy the safe example configuration and set local values in the ignored root `.env` file:
-
-```sh
-cp .env.example .env
-```
-
-Edit `.env` and set `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD`. `SESSION_COOKIE_SECURE` defaults to `false` for local HTTP. Set it to `true` when the browser reaches the app over HTTPS.
-
-### Start the stack and seed demo accounts
-
-Start the services:
-
-```sh
-docker compose up -d --build --wait --wait-timeout 180
-```
-
-Create the external demo seed file, then review it before running the seed service:
-
-```sh
-./seed.sh
-```
-
-By default, `seed.sh` creates `~/.config/employee-leave-demo/demo-seed.sql` with owner-only permissions. It contains `employee@test.com` and `manager@test.com`; the demo password is written in that SQL file. If the file already exists, the script leaves it unchanged.
-
-Run the one-shot seed service:
-
-```sh
-DEMO_SEED_SQL_FILE="$HOME/.config/employee-leave-demo/demo-seed.sql" \
-  docker compose -f compose.yaml -f compose.seed.yaml run --rm seed
-```
-
-Spring Boot applies pending Flyway migrations during startup. The seed is a separate, explicit step. Do not use these demo credentials outside this local demo.
-
-Open [http://localhost:3000](http://localhost:3000) after the services are healthy and the accounts are seeded. Only the frontend is published to the host; the backend and database ports remain inside the Compose networks.
-
-Useful commands:
-
-```sh
-docker compose ps
-docker compose logs -f frontend backend postgres
-docker compose stop
-```
-
-The database uses a named volume and retains its data across ordinary stops and `docker compose down`. `docker compose down -v` removes the database volume and its data.
-
 ## What different readers can take away
 
 This demo shows how BMad can help people with different responsibilities contribute to one shared product outcome. The artifacts give each role a way to make decisions visible to the next person.
 
 | If your perspective is… | Look at… | Take away |
 |---|---|---|
-| Product or business | PRD and initiative | Turn a problem into agreed user outcomes, boundaries, and success conditions before implementation begins. |
-| UI/UX | UX journey, `EXPERIENCE.md`, and `DESIGN.md` | Make user flows, accessibility expectations, and interface behaviour part of the build input. |
-| Architecture or development | Architecture spine, OpenAPI contract, story plans, and code | Agree on service boundaries and API behaviour, then implement in dependency order with traceable verification. |
-| Product ownership | Epic and refined story tickets | Break scope into deliverable stories, make acceptance criteria testable, and check dependencies before asking for a build. |
-| Quality and delivery | Story plans, review records, tests, and retrospective | Connect requirements to checks, record review findings, and capture what the team learned after delivery. |
+| Product or business | [PRD](_bmad-output/planning-artifacts/prds/prd-employee-leave-demo-2026-11-13/prd.md) · [initiative](_bmad-output/initiative-employee-leave-demo/initiative-employee-leave-demo.md) | Turn a problem into agreed user outcomes, boundaries, and success conditions before implementation begins. |
+| UI/UX | [Experience](_bmad-output/planning-artifacts/ux-designs/ux-employee-leave-demo-2026-11-13/EXPERIENCE.md) · [Design](_bmad-output/planning-artifacts/ux-designs/ux-employee-leave-demo-2026-11-13/DESIGN.md) | Make user flows, accessibility expectations, and interface behaviour part of the build input. |
+| Architecture | [Architecture spine](_bmad-output/planning-artifacts/architecture/architecture-employee-leave-demo-2026-11-13/ARCHITECTURE-SPINE.md) · [OpenAPI contract](_bmad-output/planning-artifacts/architecture/architecture-employee-leave-demo-2026-11-13/contracts/openapi.yaml) | Agree on service boundaries and API behaviour before implementation. |
+| Product ownership | [Epic](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/epic-employee-leave-first-build.md) · [ticket tree](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/tickets/tickets.toml) · [story tickets](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/tickets/) | Break scope into dependency-ordered stories and refine acceptance criteria so the team knows what to build and how to judge completion. |
+| Development | Build plans: [local stack](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/tickets/story-scaffold-the-local-application-stack-plan.md) · [database and seed](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/tickets/story-create-schema-and-seed-demo-accounts-plan.md) · [authentication](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/tickets/story-add-session-authentication-and-role-lookup-plan.md) · [Employee journey](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/tickets/story-build-employee-leave-submission-and-dashboard-plan.md) · [Manager journey](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/tickets/story-build-manager-review-and-decisions-plan.md) · [integration](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/tickets/story-integrate-frontend-and-backend-and-verify-journeys-plan.md) | Plan and implement one refined story at a time, then record evidence that its acceptance criteria work. |
+| Quality and delivery | [Story 6 verification plan](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/tickets/story-integrate-frontend-and-backend-and-verify-journeys-plan.md) · [epic retrospective](_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/epic-employee-leave-first-build-retrospective.md) | Connect requirements to checks, record review findings, and capture what the team learned after delivery. |
 
 ## BMad workflow used in this project
 
-The project follows the work from product scope through UX, architecture, tickets, implementation, review, and retrospective. These workflow names are invoked in Codex with the project context and task; they are not shell commands. The list reflects workflows used for this demo, not every BMad role or workflow. For current options, see [How BMad works](https://docs.bmad-method.org/start/how-bmad-works/) and the [installation guide](https://docs.bmad-method.org/start/install-bmad/).
+The project moves from product and technical direction to a refined backlog, then to planned and verified story builds, and finally to a team retrospective. These workflow names are invoked in Codex with the project context and task; they are not shell commands. This describes the workflow used for this demo, not every BMad role or workflow. For current options, see [How BMad works](https://docs.bmad-method.org/start/how-bmad-works/) and the [installation guide](https://docs.bmad-method.org/start/install-bmad/).
 
-| Order | Work | Workflow to invoke | What it produces or decides |
-|---:|---|---|---|
-| 1 | Define product scope | `bmad-prd` | PRD and validation record; agree on outcomes and boundaries |
-| 2 | Define user experience | `bmad-ux` | `EXPERIENCE.md`, `DESIGN.md`, journeys, and related UX artifacts |
-| 3 | Define technical boundaries | `bmad-architecture` | Architecture spine and `contracts/openapi.yaml` |
-| 4 | Create implementation tickets | `bmad-agent-po` with `TICKETS` | Initiative, epic, dependency-ordered stories, and ticket tree |
-| 5 | Make a story build-ready | `bmad-agent-po` with `REFINE` | Clear, verifiable acceptance criteria, edge cases, dependencies, and scope |
-| 6 | Build a story | `bmad-build` | Story plan, implementation, and recorded verification |
-| 7 | Review a story | `bmad-code-review` | Review findings and dispositions; evidence for the ticket decision |
-| 8 | Learn from the epic | `bmad-retrospective` | Retrospective findings, actions, and epic acceptance verdict |
+### 1. Product and technical direction
+
+| Work | Workflow to invoke | Output |
+|---|---|---|
+| Define product scope | `bmad-prd` | PRD and validation record; agreed outcomes and boundaries |
+| Define user experience | `bmad-ux` | `EXPERIENCE.md`, `DESIGN.md`, journeys, and related UX artifacts |
+| Define technical boundaries | `bmad-architecture` | Architecture spine and `contracts/openapi.yaml` |
+
+### 2. Product Owner leads; the team refines the backlog
+
+After the architecture and API contract are agreed, the Product Owner owns the backlog and shapes the scope into an ordered set of stories. During refinement, the wider team—including UX, architecture, and development—brings its perspective to clarify user behaviour, feasibility, dependencies, edge cases, and acceptance criteria before a story is ready to build.
+
+| Work | Workflow to invoke | Output |
+|---|---|---|
+| Create the initiative, epic, and dependency-ordered stories | `bmad-agent-po` with `TICKETS` | Initiative, epic, story files, and ticket tree |
+| Refine a story for development | `bmad-agent-po` with `REFINE` | Build-ready story with clear, verifiable acceptance criteria |
+
+### 3. Development: plan, build, and verify
+
+Development takes one refined story at a time. The build plan provides a checkpoint before implementation; verification records which acceptance criteria were checked and the results. Review findings are addressed before the story is considered done.
+
+| Work | Workflow to invoke | Output |
+|---|---|---|
+| Plan and build a story | `bmad-build` | Story plan, implementation, and verification evidence |
+| Review a story | `bmad-code-review` | Findings and dispositions against the story and plan |
+
+### 4. Team retrospective
+
+After the epic’s stories are complete, the team reviews the work and records lessons and an acceptance verdict.
+
+| Work | Workflow to invoke | Output |
+|---|---|---|
+| Review the completed epic | `bmad-retrospective` | Retrospective findings, actions, and epic acceptance verdict |
 
 ### Why refine before building?
 
 A ticket title gives the goal, but leaves important implementation questions open. Refinement turns the story into a shared agreement: what behaviour is in scope, what should happen in edge cases, how success can be observed, and which other stories or contracts it depends on. The developer can then plan and build against criteria the product owner and reviewers can evaluate.
 
-The first-pass MVP shows how the team turned product scope into a sprint-sized build: seeded Employees can sign in, submit leave requests, and track their status; Managers can sign in, view requests from assigned Employees, and approve or reject them. Registration, extra roles, notifications, and rejection reasons stayed out of this first pass. That shared scope helps product, UX, architecture, and development align on what the sprint will deliver and what it will leave for later.
-
 Story 6 provides a complementary verification example. Refinement turned “integrate the frontend and backend and verify journeys” into observable checks for authorization, separate approval and rejection journeys, and keyboard and phone-viewport behaviour. It also specified the local Compose and Playwright setup and fixture cleanup, so the end-to-end checks had repeatable pass/fail criteria and complemented earlier unit and feature tests.
-
-A typical sequence is:
-
-1. Agree on product outcomes in the PRD, user journeys and interface behaviour in UX, and service/API boundaries in architecture.
-2. Use `bmad-agent-po` with `TICKETS` to create an initiative, epic, and dependency-ordered stories.
-3. Use `bmad-agent-po` with `REFINE` on a story. Resolve open questions and make each acceptance criterion observable before building.
-4. Use `bmad-build` for one story at a time. Review the plan checkpoint, implementation, and verification evidence.
-5. Use `bmad-code-review` to check the work against the refined story and plan; address findings before deciding the story is done.
-6. After the epic’s stories are complete, use `bmad-retrospective` to record lessons and an acceptance verdict.
 
 BMad also supports work in existing codebases (brownfield) and optional modules such as Test Architect. Those were not required for the original greenfield workflow; the optional exercise below shows one way to apply the artifacts to a follow-on change. See [Start in an existing codebase](https://docs.bmad-method.org/existing-codebases/start-in-an-existing-codebase/) and [Add modules, including Test Architect](https://docs.bmad-method.org/customize/add-modules/).
 
@@ -187,6 +141,65 @@ uv run _bmad/method/scripts/tickets.py --project-root . find _bmad-output/initia
 ```
 
 The first command lists the initiative's epics and stories with dependency and status information. The second resolves story reference `1.6` to its story, plan, and current ticket state.
+
+## Run the application locally
+
+### Requirements
+
+- Docker with the Compose v2 plugin
+- Bash, to run `seed.sh`
+- Node.js and npm, to run frontend checks and the local end-to-end helper
+- `uv`, to run the BMad ticket-tree commands
+- A Codex environment with this repository's project skills, to run BMad workflows
+
+Host Java and Maven are not needed to build and start the application with Docker Compose. They are needed to run the backend Maven tests and coverage report. The [Architecture Spine](_bmad-output/planning-artifacts/architecture/architecture-employee-leave-demo-2026-11-13/ARCHITECTURE-SPINE.md) is the source of truth for application and toolchain versions; refer to it rather than maintaining a second version list here.
+
+### Configure PostgreSQL
+
+Copy the safe example configuration and set local values in the ignored root `.env` file:
+
+```sh
+cp .env.example .env
+```
+
+Edit `.env` and set `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD`. `SESSION_COOKIE_SECURE` defaults to `false` for local HTTP. Set it to `true` when the browser reaches the app over HTTPS.
+
+### Start the stack and seed demo accounts
+
+Start the services:
+
+```sh
+docker compose up -d --build --wait --wait-timeout 180
+```
+
+Create the external demo seed file, then review it before running the seed service:
+
+```sh
+./seed.sh
+```
+
+By default, `seed.sh` creates `~/.config/employee-leave-demo/demo-seed.sql` with owner-only permissions. It contains `employee@test.com` and `manager@test.com`; the demo password is written in that SQL file. If the file already exists, the script leaves it unchanged.
+
+Run the one-shot seed service:
+
+```sh
+DEMO_SEED_SQL_FILE="$HOME/.config/employee-leave-demo/demo-seed.sql" \
+  docker compose -f compose.yaml -f compose.seed.yaml run --rm seed
+```
+
+Spring Boot applies pending Flyway migrations during startup. The seed is a separate, explicit step. Do not use these demo credentials outside this local demo.
+
+Open [http://localhost:3000](http://localhost:3000) after the services are healthy and the accounts are seeded. Only the frontend is published to the host; the backend and database ports remain inside the Compose networks.
+
+Useful commands:
+
+```sh
+docker compose ps
+docker compose logs -f frontend backend postgres
+docker compose stop
+```
+
+The database uses a named volume and retains its data across ordinary stops and `docker compose down`. `docker compose down -v` removes the database volume and its data.
 
 ## Run tests, coverage, and lint
 

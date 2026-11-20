@@ -2,7 +2,7 @@
 name: Employee Leave Demo
 status: final
 sources:
-  - {project-root}/_bmad-output/planning-artifacts/prds/prd-employee-leave-demo-2026-11-13/prd.md
+  - "{project-root}/_bmad-output/planning-artifacts/prds/prd-employee-leave-demo-2026-11-13/prd.md"
 updated: 2026-11-13
 ---
 
