@@ -69,37 +69,51 @@ docker compose stop
 
 The database uses a named volume and retains its data across ordinary stops and `docker compose down`. `docker compose down -v` removes the database volume and its data.
 
-## BMad and specification-driven development
+## What different readers can take away
 
-This repository uses BMad workflows to turn requirements and contracts into dependency-ordered stories, then implement and review those stories. Invoke the workflows in Codex and provide the project context and task. They are not shell commands.
+This demo shows how BMad can help people with different responsibilities contribute to one shared product outcome. The artifacts give each role a way to make decisions visible to the next person.
 
-This table describes the greenfield workflow used for this demo, not every BMad workflow or command. BMad also supports work in existing codebases (brownfield) and optional modules such as Test Architect for test strategy and automation. Available workflows and command names depend on the installed BMad version and modules; consult the official documentation for current options:
+| If your perspective is… | Look at… | Take away |
+|---|---|---|
+| Product or business | PRD and initiative | Turn a problem into agreed user outcomes, boundaries, and success conditions before implementation begins. |
+| UI/UX | UX journey, `EXPERIENCE.md`, and `DESIGN.md` | Make user flows, accessibility expectations, and interface behaviour part of the build input. |
+| Architecture or development | Architecture spine, OpenAPI contract, story plans, and code | Agree on service boundaries and API behaviour, then implement in dependency order with traceable verification. |
+| Product ownership | Epic and refined story tickets | Break scope into deliverable stories, make acceptance criteria testable, and check dependencies before asking for a build. |
+| Quality and delivery | Story plans, review records, tests, and retrospective | Connect requirements to checks, record review findings, and capture what the team learned after delivery. |
 
-- [How BMad works](https://docs.bmad-method.org/start/how-bmad-works/)
-- [Start in an existing codebase](https://docs.bmad-method.org/existing-codebases/start-in-an-existing-codebase/)
-- [Add modules, including Test Architect](https://docs.bmad-method.org/customize/add-modules/)
+## BMad workflow used in this project
 
-| Order | Work | Workflow to invoke | Main artifacts and checkpoint |
+The project follows the work from product scope through UX, architecture, tickets, implementation, review, and retrospective. These workflow names are invoked in Codex with the project context and task; they are not shell commands. The list reflects workflows used for this demo, not every BMad role or workflow. For current options, see [How BMad works](https://docs.bmad-method.org/start/how-bmad-works/) and the [installation guide](https://docs.bmad-method.org/start/install-bmad/).
+
+| Order | Work | Workflow to invoke | What it produces or decides |
 |---:|---|---|---|
-| 1 | Define product scope | `bmad-prd` | PRD and validation record; review and agree on scope |
-| 2 | Define user experience | `bmad-ux` | `EXPERIENCE.md`, `DESIGN.md`, and related UX artifacts; review journeys and interface behavior |
-| 3 | Define technical boundaries | `bmad-architecture` | Architecture spine and `contracts/openapi.yaml`; agree on service boundaries and API contract |
-| 4 | Create implementation tickets | `bmad-agent-po` with `TICKETS` | Initiative, epic, story files, and ticket tree; check dependencies and story order |
-| 5 | Refine a story | `bmad-agent-po` with `REFINE` | Updated story acceptance criteria; approve the story before building it |
-| 6 | Build a story | `bmad-build` | Story plan, implementation, and verification evidence; review the plan before implementation |
-| 7 | Review a story | `bmad-code-review` | Findings and dispositions in the plan; mark the story done only if the review passes |
-| 8 | Review the completed epic | `bmad-retrospective` | Epic retrospective and acceptance verdict; run after the epic's stories are complete |
+| 1 | Define product scope | `bmad-prd` | PRD and validation record; agree on outcomes and boundaries |
+| 2 | Define user experience | `bmad-ux` | `EXPERIENCE.md`, `DESIGN.md`, journeys, and related UX artifacts |
+| 3 | Define technical boundaries | `bmad-architecture` | Architecture spine and `contracts/openapi.yaml` |
+| 4 | Create implementation tickets | `bmad-agent-po` with `TICKETS` | Initiative, epic, dependency-ordered stories, and ticket tree |
+| 5 | Make a story build-ready | `bmad-agent-po` with `REFINE` | Clear, verifiable acceptance criteria, edge cases, dependencies, and scope |
+| 6 | Build a story | `bmad-build` | Story plan, implementation, and recorded verification |
+| 7 | Review a story | `bmad-code-review` | Review findings and dispositions; evidence for the ticket decision |
+| 8 | Learn from the epic | `bmad-retrospective` | Retrospective findings, actions, and epic acceptance verdict |
 
-Typical workflow:
+### Why refine before building?
 
-1. Capture the product problem and requirements in a PRD.
-2. Define the user journeys, interface behavior, and accessibility expectations in UX artifacts.
-3. Agree on architecture, service boundaries, and API contracts.
-4. Use `bmad-agent-po` with `TICKETS` to create the initiative, epic, and dependency-ordered stories.
-5. Use `bmad-agent-po` with `REFINE` to refine each story, then approve its acceptance criteria before starting the build.
-6. Build one story at a time. Follow the plan checkpoint, implement the story, and record only verification that was actually run.
-7. Review the implementation against the refined story and plan. If the review does not pass, keep the story in review and address the findings.
-8. After all stories are complete, run the epic retrospective. The retrospective records lessons and an acceptance verdict; it does not replace ticket status updates.
+A ticket title gives the goal, but leaves important implementation questions open. Refinement turns the story into a shared agreement: what behaviour is in scope, what should happen in edge cases, how success can be observed, and which other stories or contracts it depends on. The developer can then plan and build against criteria the product owner and reviewers can evaluate.
+
+The first-pass MVP shows how the team turned product scope into a sprint-sized build: seeded Employees can sign in, submit leave requests, and track their status; Managers can sign in, view requests from assigned Employees, and approve or reject them. Registration, extra roles, notifications, and rejection reasons stayed out of this first pass. That shared scope helps product, UX, architecture, and development align on what the sprint will deliver and what it will leave for later.
+
+Story 6 provides a complementary verification example. Refinement turned “integrate the frontend and backend and verify journeys” into observable checks for authorization, separate approval and rejection journeys, and keyboard and phone-viewport behaviour. It also specified the local Compose and Playwright setup and fixture cleanup, so the end-to-end checks had repeatable pass/fail criteria and complemented earlier unit and feature tests.
+
+A typical sequence is:
+
+1. Agree on product outcomes in the PRD, user journeys and interface behaviour in UX, and service/API boundaries in architecture.
+2. Use `bmad-agent-po` with `TICKETS` to create an initiative, epic, and dependency-ordered stories.
+3. Use `bmad-agent-po` with `REFINE` on a story. Resolve open questions and make each acceptance criterion observable before building.
+4. Use `bmad-build` for one story at a time. Review the plan checkpoint, implementation, and verification evidence.
+5. Use `bmad-code-review` to check the work against the refined story and plan; address findings before deciding the story is done.
+6. After the epic’s stories are complete, use `bmad-retrospective` to record lessons and an acceptance verdict.
+
+BMad also supports work in existing codebases (brownfield) and optional modules such as Test Architect. Those were not required for the original greenfield workflow; the optional exercise below shows one way to apply the artifacts to a follow-on change. See [Start in an existing codebase](https://docs.bmad-method.org/existing-codebases/start-in-an-existing-codebase/) and [Add modules, including Test Architect](https://docs.bmad-method.org/customize/add-modules/).
 
 ### PRD prompt used
 
@@ -147,7 +161,7 @@ Exercise steps:
 4. **Build the same story in two tasks:** implement the migration and backend API first; then connect the Manager and Employee UI. Run the tests until they pass.
 5. **Review** with `bmad-code-review`; address findings and record verification in the story plan.
 
-Keep this as one story because the outcome is one end-to-end behavior. Split backend and frontend into dependent stories only if they need to be delivered or worked on independently.
+Keep this as one story because the outcome is one end-to-end behaviour. Split backend and frontend into dependent stories only if they need to be delivered or worked on independently.
 
 The exercise is complete when the rejection reason persists, the owning Employee can see it after signing in, other users cannot see it, and existing journeys still work.
 
@@ -158,7 +172,7 @@ The exercise is complete when the rejection reason persists, the owning Employee
 | Path | Purpose |
 |---|---|
 | `_bmad-output/planning-artifacts/prds/` | Product requirements and validation records |
-| `_bmad-output/planning-artifacts/ux-designs/` | UX journeys, accessibility behavior, visual design, and mockups |
+| `_bmad-output/planning-artifacts/ux-designs/` | UX journeys, accessibility behaviour, visual design, and mockups |
 | `_bmad-output/planning-artifacts/architecture/` | Architecture decisions, service boundaries, and API contracts |
 | `_bmad-output/initiative-employee-leave-demo/` | Initiative requirements and ticket tree |
 | `_bmad-output/initiative-employee-leave-demo/tickets/epic-employee-leave-first-build/` | Epic definition, `tickets.toml`, story files, plans, and retrospective |
