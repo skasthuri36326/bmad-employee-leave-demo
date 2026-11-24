@@ -4,10 +4,13 @@ type: story
 title: "Create schema and seed demo accounts"
 parent: epic-employee-leave-first-build
 covers: [R7, R6]
-after: [1]
+after: ["SCRUM-6"]
 refined: true
 hitl: true
 risk: high
+tracker_id: "SCRUM-7"
+remote: "https://sriramkasthuriuk.atlassian.net/browse/SCRUM-7"
+tracker_status: done
 ---
 
 # Create schema and seed demo accounts

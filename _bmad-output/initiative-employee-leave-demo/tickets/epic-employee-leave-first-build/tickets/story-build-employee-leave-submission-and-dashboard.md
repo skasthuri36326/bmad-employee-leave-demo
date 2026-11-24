@@ -4,10 +4,13 @@ type: story
 title: "Build Employee leave submission and dashboard"
 parent: epic-employee-leave-first-build
 covers: [R2, R3, R6]
-after: [3, 7]
+after: ["SCRUM-8", "SCRUM-9"]
 refined: true
 hitl: false
 risk: high
+tracker_id: "SCRUM-10"
+remote: "https://sriramkasthuriuk.atlassian.net/browse/SCRUM-10"
+tracker_status: done
 ---
 
 # Build Employee leave submission and dashboard

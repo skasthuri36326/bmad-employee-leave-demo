@@ -11,6 +11,8 @@ companions:
   - _bmad-output/planning-artifacts/architecture/architecture-employee-leave-demo-2026-11-13/contracts/openapi.yaml
 refined: false
 risk: high
+tracker_id: SCRUM-5
+remote: https://sriramkasthuriuk.atlassian.net/browse/SCRUM-5
 ---
 
 # Employee leave request and approval workflow

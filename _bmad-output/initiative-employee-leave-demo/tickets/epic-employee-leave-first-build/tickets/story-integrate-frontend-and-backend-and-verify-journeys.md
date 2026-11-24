@@ -4,10 +4,13 @@ type: story
 title: "Integrate frontend and backend and verify journeys"
 parent: epic-employee-leave-first-build
 covers: [R1, R2, R3, R4, R5, R6, R7]
-after: [5]
+after: ["SCRUM-11"]
 refined: true
 hitl: false
 risk: high
+tracker_id: "SCRUM-12"
+remote: "https://sriramkasthuriuk.atlassian.net/browse/SCRUM-12"
+tracker_status: done
 ---
 
 # Integrate frontend and backend and verify journeys

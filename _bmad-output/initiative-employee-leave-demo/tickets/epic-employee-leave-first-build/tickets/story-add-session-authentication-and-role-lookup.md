@@ -4,10 +4,13 @@ type: story
 title: "Add session authentication and role lookup"
 parent: epic-employee-leave-first-build
 covers: [R1, R6]
-after: [2]
+after: ["SCRUM-7"]
 refined: true
 hitl: true
 risk: high
+tracker_id: "SCRUM-8"
+remote: "https://sriramkasthuriuk.atlassian.net/browse/SCRUM-8"
+tracker_status: done
 ---
 
 # Add session authentication and role lookup

@@ -8,6 +8,9 @@ after: []
 refined: true
 hitl: false
 risk: high
+tracker_id: "SCRUM-6"
+remote: "https://sriramkasthuriuk.atlassian.net/browse/SCRUM-6"
+tracker_status: done
 ---
 
 # Scaffold the local application stack

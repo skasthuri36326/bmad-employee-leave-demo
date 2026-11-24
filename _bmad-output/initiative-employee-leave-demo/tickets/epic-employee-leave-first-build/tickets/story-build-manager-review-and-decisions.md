@@ -4,10 +4,13 @@ type: story
 title: "Build Manager review and decisions"
 parent: epic-employee-leave-first-build
 covers: [R4, R5, R6]
-after: [4]
+after: ["SCRUM-10"]
 refined: true
 hitl: false
 risk: high
+tracker_id: "SCRUM-11"
+remote: "https://sriramkasthuriuk.atlassian.net/browse/SCRUM-11"
+tracker_status: done
 ---
 
 # Build Manager review and decisions

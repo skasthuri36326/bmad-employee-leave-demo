@@ -4,10 +4,13 @@ type: story
 title: "Refactor existing project structure"
 parent: epic-employee-leave-first-build
 covers: []
-after: [3]
+after: ["SCRUM-8"]
 refined: true
 hitl: false
 risk: low
+tracker_id: "SCRUM-9"
+remote: "https://sriramkasthuriuk.atlassian.net/browse/SCRUM-9"
+tracker_status: done
 ---
 
 # Refactor existing project structure
