@@ -49,13 +49,6 @@ After the architecture and API contract are agreed, the Product Owner owns the b
 BMAD keeps the initiative and ticket tree in `_bmad-output`. By default, the initiative stays there while its Epic and Stories can be published to the configured Jira project. Publishing is an explicit step; Jira does not update automatically in the background.
 
 <details>
-<summary>View the Jira dashboard</summary>
-
-![Jira dashboard showing the BMAD Epic and work items](docs/images/jira-dashboard.png)
-
-</details>
-
-<details>
 <summary>Set up the Jira ticket store</summary>
 
 Install the [Atlassian CLI (ACLI)](https://developer.atlassian.com/cloud/acli/guides/install-acli/), then authenticate and check the login:
@@ -116,6 +109,13 @@ review = "In Progress"
 - `tickets.status` maps BMAD statuses to Jira statuses.
 
 This is a minimal override example: mappings not listed here use the BMad Jira defaults. Make sure the issue types and statuses you specify are available in your project.
+
+</details>
+
+<details>
+<summary>View the Jira dashboard</summary>
+
+![Jira dashboard showing the BMAD Epic and work items](docs/images/jira-dashboard.png)
 
 </details>
 
