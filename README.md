@@ -119,8 +119,6 @@ This is a minimal override example: mappings not listed here use the BMad Jira d
 
 </details>
 
-After the stories are refined and validated, approve the Product Owner workflow’s offer to publish the agreed breakdown. See the [BMad ticket-tree setup guide](https://docs.bmad-method.org/plan/set-up-the-ticket-tree/) for the complete workflow. OAuth credentials are managed by ACLI; never add OAuth tokens to this configuration file.
-
 ### 3. Development: plan, build, and verify
 
 Development takes one refined story at a time. The build plan provides a checkpoint before implementation; verification records which acceptance criteria were checked and the results. Review findings are addressed before the story is considered done.
