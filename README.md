@@ -44,6 +44,83 @@ After the architecture and API contract are agreed, the Product Owner owns the b
 | Create the initiative, epic, and dependency-ordered stories | `bmad-agent-po` with `TICKETS` | Initiative, epic, story files, and ticket tree |
 | Refine a story for development | `bmad-agent-po` with `REFINE` | Build-ready story with clear, verifiable acceptance criteria |
 
+#### BMAD and Jira integration
+
+BMAD keeps the initiative and ticket tree in `_bmad-output`. By default, the initiative stays there while its Epic and Stories can be published to the configured Jira project. Publishing is an explicit step; Jira does not update automatically in the background.
+
+<details>
+<summary>View the Jira dashboard</summary>
+
+![Jira dashboard showing the BMAD Epic and work items](docs/images/jira-dashboard.png)
+
+</details>
+
+<details>
+<summary>Set up the Jira ticket store</summary>
+
+Install the [Atlassian CLI (ACLI)](https://developer.atlassian.com/cloud/acli/guides/install-acli/), then authenticate and check the login:
+
+```sh
+acli jira auth login --web
+acli jira auth status
+```
+
+Complete the browser sign-in and select the Jira site you intend to use. If the BMAD workflow runs in a separate environment, make sure it can access an authenticated ACLI session.
+
+In Codex, ask the Product Owner workflow to set up the ticket store:
+
+```text
+/bmad-agent-po set up the ticket store
+```
+
+If it is already configured, use:
+
+```text
+/bmad-agent-po reconfigure the ticket store
+```
+
+Choose **Jira Cloud** and provide the Jira site and project key. The workflow creates or updates `_bmad/custom/ticketing-store-config.toml`.
+
+You can check that the project is visible to your account with:
+
+```sh
+acli jira project view --key YOUR_PROJECT_KEY
+```
+
+This checks project access, but not permission to create issues. Before publishing, make sure the configured issue types and statuses are available in the Jira project.
+
+</details>
+
+<details>
+<summary>Read a minimal Jira ticket-store config example</summary>
+
+The file `_bmad/custom/ticketing-store-config.toml` tells BMAD which Jira project to use and lets you override the default ticket-type and status mappings:
+
+```toml
+[tickets]
+store = "jira"
+key = "YOUR_PROJECT_KEY"
+site = "your-site.atlassian.net"
+
+[tickets.types]
+bug = "Task"
+
+[tickets.status]
+review = "In Progress"
+```
+
+- `store` selects Jira as the ticket store.
+- `key` is the Jira project key.
+- `site` is the Atlassian site hostname, without `https://`.
+- `tickets.types` maps BMAD ticket types to Jira issue types.
+- `tickets.status` maps BMAD statuses to Jira statuses.
+
+This is a minimal override example: mappings not listed here use the BMad Jira defaults. Make sure the issue types and statuses you specify are available in your project.
+
+</details>
+
+After the stories are refined and validated, approve the Product Owner workflow’s offer to publish the agreed breakdown. See the [BMad ticket-tree setup guide](https://docs.bmad-method.org/plan/set-up-the-ticket-tree/) for the complete workflow. OAuth credentials are managed by ACLI; never add OAuth tokens to this configuration file.
+
 ### 3. Development: plan, build, and verify
 
 Development takes one refined story at a time. The build plan provides a checkpoint before implementation; verification records which acceptance criteria were checked and the results. Review findings are addressed before the story is considered done.
